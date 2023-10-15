@@ -3,6 +3,8 @@ pragma solidity ^0.8.9;
 
 import "../interfaces/IGravix.sol";
 import "../libraries/Constants.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../interfaces/IERC20Minter.sol";
 
 abstract contract GravixStorage is IGravix {
 
@@ -20,7 +22,9 @@ abstract contract GravixStorage is IGravix {
 
     mapping (uint => IGravix.Market) public markets;
     uint public requestNonce = 0;
-
+    InsuranceFund insuranceFund;
+    IERC20 public usdt;
+    IERC20Minter public stgUsdt;
     LiquidationParams public liquidationParams = LiquidationParams({
         thresholdRate: 100_000_000_000, // 10%,
         rewardShare: 20_000_000_000 // 2%. Share of liquidated collateral that liquidator collect,
@@ -35,5 +39,8 @@ abstract contract GravixStorage is IGravix {
     uint maxPoolUtilRatio = 1_000_000_000_000; // 100%, multiplied by 1_000_000_000_000
     uint maxPnlRate = 3_000_000_000_000; // 300%, multiplied by 1_000_000_000_000
     uint minPositionCollateral = 5 * Constants.USDT_DECIMALS; // 5$
+
+    uint marketCount = 0;
+
 
 }

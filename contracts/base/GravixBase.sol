@@ -5,4 +5,5 @@ import "./GravixMarketPositions.sol";
 
 abstract contract GravixBase is GravixMarketPositions {
 
+
 }

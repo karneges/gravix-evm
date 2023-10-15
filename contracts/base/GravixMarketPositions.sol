@@ -7,8 +7,10 @@ import "./GravixStorage.sol";
 import "../libraries/GravixMath.sol";
 import "../libraries/Constants.sol";
 import "../libraries/Errors.sol";
+import "./GravixMarkets.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-abstract contract GravixMarketPositions is GravixStorage {
+abstract contract GravixMarketPositions is GravixMarkets {
     function openMarketPosition(
         uint marketIdx,
         IGravix.PositionType positionType,
@@ -18,6 +20,8 @@ abstract contract GravixMarketPositions is GravixStorage {
         uint maxSlippageRate, // %
         uint _assetPrice
     ) public {
+
+        IERC20(usdt).transferFrom(msg.sender, address(this), collateral);
 
         IGravix.Market storage market = markets[marketIdx];
         requestNonce += 1;

@@ -2,11 +2,21 @@
 pragma solidity ^0.8.9;
 
 interface IGravix {
+    event NewMarket(
+        MarketConfig market
+    );
+    event LiquidityPoolDeposit(address user, uint usdtAmountIn, uint stgUsdtAmountOut);
+    event InsuranceFundDeposit(address user, uint amount);
+    event LiquidityPoolWithdraw(address user, uint usdtAmountOut, uint stgUsdtAmountIn);
+
     enum PositionType {
         Long,
         Short
     }
-
+    struct InsuranceFund {
+        uint balance; // collected fees, pnl and etc.
+        uint limit;
+    }
     struct Position {
         uint marketIdx;
         PositionType positionType;
@@ -62,5 +72,14 @@ interface IGravix {
         uint balance; // liquidity deposits
         uint stgUsdtSupply; // amount of minted stgUsdt
         uint targetPrice;
+    }
+
+    struct MarketConfig {
+        uint maxLongsUSD;
+        uint maxShortsUSD;
+        uint noiWeight;
+        uint maxLeverage;
+        uint depthAsset;
+        Fees fees;
     }
 }
