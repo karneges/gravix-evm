@@ -8,6 +8,12 @@ interface IGravix {
     event LiquidityPoolDeposit(address user, uint usdtAmountIn, uint stgUsdtAmountOut);
     event InsuranceFundDeposit(address user, uint amount);
     event LiquidityPoolWithdraw(address user, uint usdtAmountOut, uint stgUsdtAmountIn);
+    event MarketOrderExecution(
+        address user,
+        Position position,
+        uint positionKey
+    );
+    event LiquidityPoolFees(uint fees);
 
     enum PositionType {
         Long,
@@ -25,7 +31,7 @@ interface IGravix {
         uint openPrice; // 8 decimals number
         uint markPrice; // 8 decimals number
         uint leverage;
-        int256 accUSDFundingPerShare;
+        int accUSDFundingPerShare;
         uint borrowBaseRatePerHour; // % per hour
         uint baseSpreadRate; // %
         uint closeFeeRate; // %
@@ -81,5 +87,55 @@ interface IGravix {
         uint maxLeverage;
         uint depthAsset;
         Fees fees;
+    }
+
+    struct ViewInputInternal {
+        uint128 assetPrice; // 8 decimals number
+        Funding funding;
+    }
+    struct ViewInput {
+        uint32 positionKey;
+        address user;
+        uint128 assetPrice; // 8 decimals number
+        Funding funding;
+    }
+
+    struct PositionView {
+        Position position;
+        uint positionSizeUSD; // 6 decimals number
+        uint closePrice; // 8 decimals number
+        uint borrowFee; // 6 decimals number
+        int fundingFee; // 6 decimals number
+        uint closeFee; // 6 decimals number
+        uint liquidationPrice; // 8 decimals number
+        int pnl; // 6 decimals number
+        bool liquidate;
+        uint viewTime;
+    }
+
+    struct Treasuries {
+        address treasury;
+        address projectFund;
+        address devFund;
+    }
+    struct Details {
+        address priceNode;
+        address usdt;
+        address stgUsdt;
+        Treasuries treasuries;
+        PoolAssets poolAssets;
+        InsuranceFund insuranceFunds; // collected fees, pnl and etc.,
+        uint[3] insuranceFundOverflowDistributionSchema;
+        uint collateralReserve; // sum of all usdt provided as a collateral for open order
+        uint totalNOI;
+        bool totalNOILimitEnabled;
+        uint maxPoolUtilRatio;
+        uint maxPnlRate;
+        uint minPositionCollateral;
+        bool paused;
+        LiquidationParams liquidation;
+        uint[2] openFeeDistributionSchema;
+        uint[2] closeFeeDistributionSchema;
+        uint marketCount;
     }
 }

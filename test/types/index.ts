@@ -1,10 +1,10 @@
 export interface MarketConfig {
   priceSource: 0 | 1 | 2;
-  maxLongsUSD: number;
-  maxShortsUSD: number;
+  maxLongsUSD: bigint;
+  maxShortsUSD: bigint;
   noiWeight: number;
   maxLeverage: number;
-  depthAsset: number;
+  depthAsset: bigint;
   fees: {
     openFeeRate: number;
     closeFeeRate: number;
@@ -13,4 +13,8 @@ export interface MarketConfig {
     borrowBaseRatePerHour: number;
     fundingBaseRatePerHour: number;
   };
+}
+export enum PositionType {
+  Long,
+  Short,
 }

@@ -9,8 +9,11 @@ import "../libraries/Constants.sol";
 import "../libraries/Errors.sol";
 import "./GravixMarkets.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 abstract contract GravixMarketPositions is GravixMarkets {
+    using ECDSA for bytes32;
     function openMarketPosition(
         uint marketIdx,
         IGravix.PositionType positionType,
@@ -18,13 +21,15 @@ abstract contract GravixMarketPositions is GravixMarkets {
         uint expectedPrice, // 8 decimals number
         uint leverage, // 6 decimals number
         uint maxSlippageRate, // %
-        uint _assetPrice
+        uint _assetPrice,
+        uint timestamp,
+        bytes calldata  signature
     ) public {
-
+        require(checkSign(_assetPrice, timestamp, signature), "Invalid signature");
         IERC20(usdt).transferFrom(msg.sender, address(this), collateral);
 
         IGravix.Market storage market = markets[marketIdx];
-        requestNonce += 1;
+
 
         uint positionSizeAsset = calculatePositionAssetSize(collateral, leverage, _assetPrice);
         uint dynamicSpread = getDynamicSpread(positionSizeAsset, market, positionType);
@@ -66,7 +71,17 @@ abstract contract GravixMarketPositions is GravixMarkets {
             createdAt: block.timestamp
         });
 
-        positions[marketIdx][msg.sender][requestNonce] = newPosition;
+        _collectOpenFee(newPosition.openFee);
+        collateralReserve += newPosition.initialCollateral - newPosition.openFee;
+
+        positions[msg.sender][requestNonce] = newPosition;
+        emit MarketOrderExecution(
+            msg.sender,
+            newPosition,
+            requestNonce
+        );
+        requestNonce += 1;
+
     }
 
     function getDynamicSpread(
@@ -84,6 +99,7 @@ abstract contract GravixMarketPositions is GravixMarkets {
             uint newShortsTotal = _market.totalShortsAsset + positionSizeAsset / 2;
             newNoi = newShortsTotal - Math.min(_market.totalLongsAsset, newShortsTotal);
         }
+
         dynamicSpread = Math.mulDiv(newNoi, _market.fees.baseDynamicSpreadRate, _market.depthAsset);
         return dynamicSpread;
     }
@@ -252,5 +268,92 @@ abstract contract GravixMarketPositions is GravixMarkets {
         int256 fundingUsd = fundingAsset * int(assetPrice) / int(Constants.PRICE_DECIMALS);
         return fundingUsd / int(totalPosition);
     }
+//    function checkSign(
+//        uint _price,
+//        uint _timestamp,
+//        bytes memory _signature
+//    ) internal view returns(bool) {
+////        bytes32 messageHash = keccak256(abi.encodePacked(_price, _timestamp));
+////        bytes32 ethSignedMessageHash  = keccak256(
+////            abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash)
+////        );
+////        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
+////        address signer = ecrecover(ethSignedMessageHash, v, r, s);
+////        console.log("signer", signer);
+////        return signer == priceNode;
+//       return keccak256(abi.encodePacked(_price, _timestamp)).toEthSignedMessageHash().recover(_signature) == priceNode;
+//    }
+    function checkSign(
+        uint _price,
+        uint _timestamp,
+        bytes memory _signature
+    ) internal view returns(bool) {
+
+        return keccak256(abi.encodePacked(_price,_timestamp)).toEthSignedMessageHash().recover(_signature) == priceNode;
+    }
+
+
+    function getMessageHash(
+        address _to,
+        uint _amount,
+        string memory _message,
+        uint _nonce
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_to, _amount, _message, _nonce));
+    }
+
+    function getEthSignedMessageHash(bytes32 _messageHash)
+    public
+    pure
+    returns (bytes32)
+    {
+        return
+            keccak256(
+            abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash)
+        );
+    }
+
+    function verify(
+        address _signer,
+        address _to,
+        uint _amount,
+        string memory _message,
+        uint _nonce,
+        bytes memory signature
+    ) public pure returns (bool) {
+        bytes32 messageHash = getMessageHash(_to, _amount, _message, _nonce);
+        bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
+
+        return recoverSigner(ethSignedMessageHash, signature) == _signer;
+    }
+
+    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature)
+    public
+    pure
+    returns (address)
+    {
+        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
+
+        return ecrecover(_ethSignedMessageHash, v, r, s);
+    }
+
+    function splitSignature(bytes memory sig)
+    public
+    pure
+    returns (
+        bytes32 r,
+        bytes32 s,
+        uint8 v
+    )
+    {
+        require(sig.length == 65, "invalid signature length");
+
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+    }
+
 
 }

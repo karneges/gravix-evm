@@ -15,7 +15,7 @@ library GravixMath {
         return newPrice;
     }
 
-    function applyCloseSpread(uint price, IGravix.PositionType _type, uint spread) internal returns (uint newPrice) {
+    function applyCloseSpread(uint price, IGravix.PositionType _type, uint spread) internal pure returns (uint newPrice) {
         newPrice = _type == IGravix.PositionType.Long ?
             Math.mulDiv(price, (Constants.HUNDRED_PERCENT - spread), Constants.HUNDRED_PERCENT) :
             Math.mulDiv(price, (Constants.HUNDRED_PERCENT + spread), Constants.HUNDRED_PERCENT);
@@ -26,7 +26,7 @@ library GravixMath {
         uint collateral, // collateral - openFee
         uint leverage,
         uint openPrice
-    ) internal returns (uint leveragedPositionUsd, uint leveragedPositionAsset) {
+    ) internal pure returns (uint leveragedPositionUsd, uint leveragedPositionAsset) {
         leveragedPositionUsd = Math.mulDiv(collateral, leverage, Constants.LEVERAGE_BASE);
         leveragedPositionAsset = Math.mulDiv(leveragedPositionUsd, Constants.PRICE_DECIMALS, openPrice);
     }
@@ -35,7 +35,7 @@ library GravixMath {
         uint leveragedPositionUsd,
         uint createdAt,
         uint borrowBaseRatePerHour
-    ) internal returns (uint borrowFee) {
+    ) internal view returns (uint borrowFee) {
         uint timePassed = block.timestamp - createdAt;
         uint borrowFeeShare = Math.mulDiv(borrowBaseRatePerHour, timePassed, Constants.HOUR);
         borrowFee = Math.mulDiv(borrowFeeShare, leveragedPositionUsd, Constants.HUNDRED_PERCENT);
@@ -45,7 +45,7 @@ library GravixMath {
         int256 newAccFunding,
         int256 posAccFunding,
         uint leveragedPositionAsset
-    ) internal returns (int256 fundingFeeUsd) {
+    ) internal pure returns (int256 fundingFeeUsd) {
         int256 fundingDebt = int256(leveragedPositionAsset) * posAccFunding / int256(Constants.SCALING_FACTOR);
         // if fundingFee > 0, trader pays
         fundingFeeUsd = int256(leveragedPositionAsset) * newAccFunding / int256(Constants.SCALING_FACTOR) - fundingDebt;
@@ -56,7 +56,7 @@ library GravixMath {
         uint closePrice, // including spread
         IGravix.PositionType posType,
         uint leveragedPos // (collateral - open fee) * leverage
-    ) internal returns (int256 pnl) {
+    ) internal pure returns (int256 pnl) {
         // (closePrice/openPrice - 1)
         pnl = int256(Math.mulDiv(closePrice, Constants.SCALING_FACTOR, openPrice)) - int256(Constants.SCALING_FACTOR);
         // * (-1) for shorts
@@ -72,7 +72,7 @@ library GravixMath {
         int256 fundingFee,
         uint leveragedPos, // (collateral - open fee) * leverage
         uint liquidationThresholdRate // %
-    ) internal returns (int256 liqPriceDist) {
+    ) internal pure returns (int256 liqPriceDist) {
         // collateral * 0.9
         liqPriceDist = int256(Math.mulDiv(collateral, (Constants.HUNDRED_PERCENT - liquidationThresholdRate),  Constants.HUNDRED_PERCENT));
         // - borrowFee - fundingFeeUsd
@@ -90,7 +90,7 @@ library GravixMath {
         uint leveragedPos, // (collateral - open fee) * leverage
         uint liquidationThresholdRate, // %
         uint baseSpreadRate // %
-    ) internal returns (uint liqPrice) {
+    ) internal pure returns (uint liqPrice) {
         int256 liqPriceDist = calculateLiquidationPriceDistance(
             openPrice,
             collateral,
@@ -112,7 +112,7 @@ library GravixMath {
         uint leveragedPos, // (collateral - open fee) * leverage
         uint liquidationThresholdRate, // %
         uint baseSpreadRate // %
-    ) internal returns (uint) {
+    ) internal pure returns (uint) {
         return calculateLiquidationPrice(
             openPrice, collateral, posType, 0, 0, leveragedPos, liquidationThresholdRate, baseSpreadRate
         );

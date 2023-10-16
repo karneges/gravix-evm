@@ -5,15 +5,19 @@ import {
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { MarketConfig } from "./types";
-import { USDT_DECIMALS } from "./constants";
+import { MarketConfig, PositionType } from "./types";
+import { LEVERAGE_DECIMALS, PERCENT_100, USDT_DECIMALS } from "./constants";
+import { getOpenPositionInfo, GravixVault } from "./utils/Vault";
+import { PriceService } from "./priceService";
+import { EventLog, getBytes } from "ethers";
+import { checkOpenedPositionMath } from "./utils/mathChecks";
 const basic_config: MarketConfig = {
   priceSource: 1,
-  maxLongsUSD: 100_000 * USDT_DECIMALS, // 100k
-  maxShortsUSD: 100_000 * USDT_DECIMALS, // 100k
+  maxLongsUSD: 100_000n * USDT_DECIMALS, // 100k
+  maxShortsUSD: 100_000n * USDT_DECIMALS, // 100k
   noiWeight: 100,
   maxLeverage: 100_000_000, // 100x
-  depthAsset: 15 * USDT_DECIMALS, // 25k
+  depthAsset: 15n * USDT_DECIMALS, // 25k
   fees: {
     openFeeRate: 1000000000, // 0.1%
     closeFeeRate: 1000000000, // 0.1%
@@ -29,7 +33,7 @@ describe("Lock", function () {
   // and reset Hardhat Network to that snapshot in every test.
   async function deployOneYearLockFixture() {
     // Contracts are deployed using the first signer/account by default
-    const [owner, otherAccount] = await ethers.getSigners();
+    const [owner, priceNode, otherAccount] = await ethers.getSigners();
 
     const Gravix = await ethers.getContractFactory("Gravix");
     const usdt = await ethers
@@ -38,14 +42,20 @@ describe("Lock", function () {
     const stg = await ethers
       .getContractFactory("ERC20Tokens")
       .then((res) => res.deploy("STG_USDT", "STG_USDT"));
-    const gravix = await Gravix.deploy(usdt.getAddress(), stg.getAddress());
+    const gravix = await Gravix.deploy(
+      usdt.getAddress(),
+      stg.getAddress(),
+      priceNode.address,
+    );
     await Promise.all(
       [stg].map((el) => el.transferOwnership(gravix.getAddress())),
     );
-    await usdt.mint(owner.getAddress(), 100_000_000 * USDT_DECIMALS);
+    const gravixVault = new GravixVault(gravix, usdt, stg);
+    await usdt.mint(owner.getAddress(), 100_000_000n * USDT_DECIMALS);
     return {
-      gravix,
+      gravixVault,
       owner,
+      priceNode,
       otherAccount,
       usdt,
       stg,
@@ -54,9 +64,12 @@ describe("Lock", function () {
 
   describe("Deployment", function () {
     it("Should set the right owner and tokens", async function () {
-      const { gravix, owner, stg, usdt } = await loadFixture(
-        deployOneYearLockFixture,
-      );
+      const {
+        gravixVault: { contract: gravix },
+        owner,
+        stg,
+        usdt,
+      } = await loadFixture(deployOneYearLockFixture);
 
       expect(await gravix.owner()).to.equal(owner.address);
       expect(await gravix.usdt()).to.equal(await usdt.getAddress());
@@ -64,7 +77,9 @@ describe("Lock", function () {
     });
 
     it("Should set new market config", async function () {
-      const { gravix } = await loadFixture(deployOneYearLockFixture);
+      const {
+        gravixVault: { contract: gravix },
+      } = await loadFixture(deployOneYearLockFixture);
 
       await gravix.addMarkets([basic_config]).then((res) => res.wait());
       const firstMarket = await gravix.markets(0);
@@ -72,66 +87,86 @@ describe("Lock", function () {
     });
   });
 
-  describe("Deposit liquidity", function () {
-    describe("Validations", function () {
-      it("Should revert with the right error if called too soon", async function () {
-        const { gravix, usdt } = await loadFixture(deployOneYearLockFixture);
-        await usdt.approve(gravix.getAddress(), 100_000_000 * USDT_DECIMALS);
-        await gravix.depositLiquidity(100_000_000 * USDT_DECIMALS);
-      });
+  describe("Deposit/Withdraw liquidity", function () {
+    it("Should deposit usdt and receive the same amount of stg", async function () {
+      const { gravixVault, usdt, stg, owner } = await loadFixture(
+        deployOneYearLockFixture,
+      );
+      const DEPOSIT_AMOUNT = 100_000_000n * USDT_DECIMALS;
+      await expect(gravixVault.depositLiquidity({ amount: DEPOSIT_AMOUNT }))
+        .to.emit(gravixVault.contract, "LiquidityPoolDeposit")
+        .withArgs(owner.address, DEPOSIT_AMOUNT, DEPOSIT_AMOUNT);
 
-      it("Should revert with the right error if called from another account", async function () {
-        const { lock, unlockTime, otherAccount } = await loadFixture(
-          deployOneYearLockFixture,
-        );
+      const { balance, stgUsdtSupply, targetPrice } =
+        await gravixVault.contract.poolAssets();
+      expect(balance).to.equal(DEPOSIT_AMOUNT);
+      expect(stgUsdtSupply).to.equal(DEPOSIT_AMOUNT);
 
-        // We can increase the time in Hardhat Network
-        await time.increaseTo(unlockTime);
-
-        // We use lock.connect() to send a transaction from another account
-        await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-          "You aren't the owner",
-        );
-      });
-
-      it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-        const { lock, unlockTime } = await loadFixture(
-          deployOneYearLockFixture,
-        );
-
-        // Transactions are sent using the first signer by default
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw()).not.to.be.reverted;
-      });
+      await expect(gravixVault.withdrawLiquidity({ amount: DEPOSIT_AMOUNT }))
+        .to.emit(gravixVault.contract, "LiquidityPoolWithdraw")
+        .withArgs(owner.address, DEPOSIT_AMOUNT, DEPOSIT_AMOUNT);
     });
+  });
+  describe("Market position", function () {
+    it("should open market position", async () => {
+      const { gravixVault, usdt, stg, owner, priceNode } = await loadFixture(
+        deployOneYearLockFixture,
+      );
 
-    describe("Events", function () {
-      it("Should emit an event on withdrawals", async function () {
-        const { lock, unlockTime, lockedAmount } = await loadFixture(
-          deployOneYearLockFixture,
-        );
+      await gravixVault.contract
+        .addMarkets([basic_config])
+        .then((res) => res.wait());
+      const collateral = 100n * USDT_DECIMALS;
 
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw())
-          .to.emit(lock, "Withdrawal")
-          .withArgs(lockedAmount, anyValue); // We accept any value as `when` arg
+      await usdt.approve(gravixVault.contract, collateral);
+      const leverage = LEVERAGE_DECIMALS;
+      const price = 100n * USDT_DECIMALS;
+      const timestamp = await time.latest();
+      const signature = await PriceService.getPriceSignature({
+        price,
+        timestamp,
+        signer: priceNode,
       });
-    });
+      const vaultPrevDetails = await gravixVault.contract.getDetails();
+      const { expectedPrice, position, market } = await getOpenPositionInfo({
+        initialPrice: price,
+        leverage,
+        collateral,
+        gravixVault,
+        positionType: PositionType.Long,
+        marketIdx: 0,
+      });
+      await expect(
+        gravixVault.contract.openMarketPosition(
+          0,
+          PositionType.Long,
+          collateral,
+          expectedPrice,
+          leverage,
+          100,
+          price,
+          timestamp,
+          signature,
+        ),
+      ).to.emit(gravixVault.contract, "MarketOrderExecution");
+      const userPosition = await gravixVault.contract.positions(owner, 0);
+      const openFeeExpected =
+        (position * market.fees.openFeeRate) / PERCENT_100;
 
-    describe("Transfers", function () {
-      it("Should transfer the funds to the owner", async function () {
-        const { lock, unlockTime, lockedAmount, owner } = await loadFixture(
-          deployOneYearLockFixture,
-        );
+      expect(userPosition.openFee).to.equal(openFeeExpected);
 
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw()).to.changeEtherBalances(
-          [owner, lock],
-          [lockedAmount, -lockedAmount],
-        );
+      const {} = await checkOpenedPositionMath({
+        vault: gravixVault,
+        collateral,
+        leverage,
+        marketIdx: 0n,
+        openFeeExpected,
+        expectedOpenPrice: expectedPrice,
+        posType: PositionType.Long,
+        user: owner.address,
+        assetPrice: BigInt(price),
+        vaultPrevDetails,
+        positionKey: "0",
       });
     });
   });

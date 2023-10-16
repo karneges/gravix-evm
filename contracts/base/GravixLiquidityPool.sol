@@ -67,7 +67,6 @@ abstract contract GravixLiquidityPool is GravixStorage {
 
 
     function withdrawLiquidity(uint stgUsdtAmount) external {
-        stgUsdt.transferFrom(msg.sender, address(this), stgUsdtAmount);
         stgUsdt.burn(msg.sender, stgUsdtAmount);
         uint usdtAmount = stgUsdtToUsdt(stgUsdtAmount);
 

@@ -2,8 +2,9 @@
 pragma solidity ^0.8.9;
 
 import "./GravixLiquidityPool.sol";
+import "./GravixHelpers.sol";
 
-abstract contract GravixMarkets is GravixLiquidityPool {
+abstract contract GravixMarkets is GravixOrderHelpers {
 
     function validateMarketConfig(MarketConfig memory config) public pure returns (bool correct) {
         correct = true && config.maxLeverage >= Constants.LEVERAGE_BASE;

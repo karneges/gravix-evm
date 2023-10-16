@@ -5,9 +5,14 @@ import "./base/GravixBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Gravix is GravixBase, Ownable {
-    constructor(address _usdt, address _stgUsdt) {
+    constructor(
+        address _usdt,
+        address _stgUsdt,
+        address _priceNode
+    ) {
         usdt = IERC20(_usdt);
         stgUsdt = IERC20Minter(_stgUsdt);
+        priceNode = _priceNode;
     }
 }
 
