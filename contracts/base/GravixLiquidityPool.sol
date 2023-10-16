@@ -4,8 +4,9 @@ pragma solidity ^0.8.9;
 import "./GravixStorage.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "../interfaces/IERC20Minter.sol";
+import "./GravixBase.sol";
 
-abstract contract GravixLiquidityPool is GravixStorage {
+abstract contract GravixLiquidityPool is GravixBase {
 
     function depositLiquidity(
         uint amount
@@ -58,6 +59,23 @@ abstract contract GravixLiquidityPool is GravixStorage {
             if (amount > 0) poolAssets.targetPrice = 0;
         }
         insuranceFund.balance += amount;
+    }
+    function _decreaseInsuranceFund(uint amount) internal returns (uint debt) {
+        if (amount <= insuranceFund.balance) {
+            insuranceFund.balance -= amount;
+        } else {
+            uint delta = amount - insuranceFund.balance;
+            // we just ran out of insurance fund, save target price
+            if (poolAssets.targetPrice == 0) {
+                (poolAssets.targetPrice,) = stgUsdtPrice();
+            }
+            if (delta > poolAssets.balance) {
+                debt = delta - poolAssets.balance;
+                delta = poolAssets.balance;
+            }
+            poolAssets.balance -= delta;
+            insuranceFund.balance = 0;
+        }
     }
 
     function poolDebt() public view returns (uint) {

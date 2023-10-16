@@ -14,6 +14,9 @@ interface IGravix {
         uint positionKey
     );
     event LiquidityPoolFees(uint fees);
+    event LiquidatePosition(address user, address liquidator, uint positionKey, PositionView positionView);
+    event ClosePosition(address user, uint positionKey, PositionView positionView);
+    event Debt(address user, uint debt);
 
     enum PositionType {
         Long,
@@ -90,13 +93,13 @@ interface IGravix {
     }
 
     struct ViewInputInternal {
-        uint128 assetPrice; // 8 decimals number
+        uint assetPrice; // 8 decimals number
         Funding funding;
     }
     struct ViewInput {
-        uint32 positionKey;
+        uint positionKey;
         address user;
-        uint128 assetPrice; // 8 decimals number
+        uint assetPrice; // 8 decimals number
         Funding funding;
     }
 

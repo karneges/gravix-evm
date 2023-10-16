@@ -23,7 +23,7 @@ export const checkOpenedPositionMath = async ({
   collateral: bigint;
   openFeeExpected: bigint;
   vaultPrevDetails: IGravix.DetailsStructOutput;
-  positionKey: string;
+  positionKey: number;
   assetPrice: bigint;
   leverage: bigint;
   expectedOpenPrice: bigint;

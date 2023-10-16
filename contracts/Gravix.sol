@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "./base/GravixBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./base/GravixMarketPositions.sol";
 
-contract Gravix is GravixBase, Ownable {
+contract Gravix is Ownable, GravixMarketPositions {
     constructor(
         address _usdt,
         address _stgUsdt,

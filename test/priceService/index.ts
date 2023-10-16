@@ -6,14 +6,19 @@ export class PriceService {
     price,
     signer,
     timestamp,
+    marketIdx,
   }: {
     price: bigint;
     signer: Signer;
     timestamp: number;
+    marketIdx: number;
   }) => {
     return await signer.signMessage(
       getBytes(
-        solidityPackedKeccak256(["uint256", "uint256"], [price, timestamp]),
+        solidityPackedKeccak256(
+          ["uint256", "uint256", "uint256"],
+          [price, timestamp, marketIdx],
+        ),
       ),
     );
   };
