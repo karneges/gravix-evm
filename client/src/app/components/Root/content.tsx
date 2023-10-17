@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import { useStore } from '../../hooks/useStore.js'
 import { GravixStore } from '../../stores/GravixStore.js'
 import { Header } from '../Header/index.js'
