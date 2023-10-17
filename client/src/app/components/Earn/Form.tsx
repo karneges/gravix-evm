@@ -61,15 +61,9 @@ export const EarnForm: React.FC = observer(() => {
                         ) : null}
                     </div>
 
-                    {form.action === EarnAction.Deposit ? (
-                        <Button type="primary" block disabled={form.loading}>
-                            Deposit
-                        </Button>
-                    ) : form.action === EarnAction.Withdraw ? (
-                        <Button type="primary" block disabled={form.loading}>
-                            Withdraw
-                        </Button>
-                    ) : null}
+                    <Button htmlType="submit" type="primary" block disabled={form.loading}>
+                        {form.action === EarnAction.Deposit ? 'Deposit' : 'Withdraw'}
+                    </Button>
                 </form>
             </Card>
         </div>
