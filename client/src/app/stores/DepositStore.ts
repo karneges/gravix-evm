@@ -1,9 +1,14 @@
 import { makeAutoObservable, reaction } from 'mobx'
 import { BigNumber } from 'bignumber.js'
 import { Reactions } from '../utils/reactions.js'
-import { Contract, ethers } from 'ethers'
+import { Contract, ethers, BaseContract } from 'ethers'
 import { EvmWalletStore } from './EvmWalletStore.js'
-import { GravixAbi } from '../../assets/abi/Gravix.js'
+import GravixAbi from '../../assets/abi/Gravix.json'
+import { Gravix } from '../../assets/misc/index.js'
+import { PriceStore } from './PriceStore.js'
+import { GravixStore } from './GravixStore.js'
+import { normalizeAmount } from '../utils/normalize-amount.js'
+import { normalizePercent } from '../utils/mix.js'
 
 export enum DepositType {
     LONG = '0',
@@ -20,8 +25,13 @@ export class DepositStore {
     leverageVal = 1
     collateralVal = 1
     positionSizeVal = '1'
+    slippage = '0'
 
-    constructor(protected evmWallet: EvmWalletStore) {
+    constructor(
+        protected evmWallet: EvmWalletStore,
+        protected priceStore: PriceStore,
+        protected gravix: GravixStore,
+    ) {
         makeAutoObservable(
             this,
             {},
@@ -51,12 +61,34 @@ export class DepositStore {
     }
 
     submitMarketOrder = async () => {
-        if (!this.evmWallet?.provider) return
+        if (!this.evmWallet?.provider || !this.priceStore.price) return
         const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
         const signer = await browserProvider.getSigner()
-        const gravixContract = new Contract(GRAVIX_VAULT, GravixAbi, signer)
+        const gravixContract = new Contract(GRAVIX_VAULT, GravixAbi.abi, signer) as BaseContract as Gravix
         // const iface = new ethers.utils.Interface(contract.abi)
-        console.log(gravixContract, 'SUBMIT')
+        console.log(1, 'SUBMIT')
+        // uint marketIdx
+        // PositionType positionType, // long(0)/Short(1)
+        // uint collateral, // 6 decimals number // тоже самое как в обычном гравиксе
+        // uint expectedPrice, // 8 decimals number // тоже самое как в обычном гравиксе
+        // uint leverage, // 6 decimals number // тоже самое как в обычном гравиксе
+        // uint maxSlippageRate, // % // тоже самое как в обычном гравиксе
+        // uint _assetPrice,  // данные поля вернёт ручка, по конкретному маркету
+        // uint timestamp,  //
+        // bytes calldata  signature //
+        const markets = await gravixContract.getAllMarkets()
+        // const btcMarket = markets[0][0].toString()
+        // const collateral = new BigNumber(this.collateralVal).shiftedBy(6)
+        console.log(markets[0][0].toString(), 'markets')
+        console.log(markets, 'markets')
+        // gravixContract.openMarketPosition(
+        //     btcMarket,
+        //     this.formDepositType,
+        //     collateral,
+        //     this.openPriceNormalized,
+        //     this.leverageNormalized,
+        //     this.slippageNormalized,
+        // )
     }
 
     get test() {
@@ -65,5 +97,21 @@ export class DepositStore {
 
     public get getThemeMode(): boolean {
         return this.isDarkMode ?? false
+    }
+
+    public get leverageNormalized(): string | undefined {
+        return this.leverageVal ? normalizeAmount(this.leverageVal.toString(), this.gravix.baseNumber) : undefined
+    }
+
+    public get collateralNormalized(): string | undefined {
+        return this.collateralVal ? normalizeAmount(this.collateralVal.toString(), this.gravix.baseNumber) : undefined
+    }
+
+    public get openPriceNormalized(): string | undefined {
+        return this.priceStore.price ? normalizeAmount(this.priceStore.price, this.gravix.priceDecimals) : undefined
+    }
+
+    public get slippageNormalized(): string | undefined {
+        return this.slippage ? normalizePercent(this.slippage) : undefined
     }
 }
