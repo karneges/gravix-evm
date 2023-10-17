@@ -6,7 +6,7 @@
   "main": "./dest/index.js",
   "scripts": {
     "build": "tsc -b && webpack",
-    "clean": "rm -rf ./dest .tsbuildinfo",
+    "clean": "rm -rf ./dest",
     "start": "serve -p 3000 ./dest",
     "start:dev": "webpack serve --mode=development",
     "formatting": "prettier --check ./src && eslint ./src",
