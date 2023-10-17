@@ -141,4 +141,17 @@ interface IGravix {
         uint[2] closeFeeDistributionSchema;
         uint marketCount;
     }
+
+    struct LiquidationConfig {
+        uint marketIdx;
+        uint assetPrice;
+        uint timestamp;
+        bytes signature;
+        PositionIdx[] positions;
+    }
+
+    struct PositionIdx {
+        address user;
+        uint positionKey;
+    }
 }

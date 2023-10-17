@@ -8,6 +8,7 @@ import { MarketConfig, PositionType } from "./types";
 import {
   LEVERAGE_DECIMALS,
   PERCENT_100,
+  PRICE_DECIMALS,
   SCALING_FACTOR,
   USDT_DECIMALS,
 } from "./constants";
@@ -315,6 +316,130 @@ describe("Lock", function () {
       expect(from).to.be.eq(await gravixVault.contract.getAddress());
       expect(to).to.be.eq(await owner.getAddress());
       expect(value).to.be.eq(userPayout);
+    });
+  });
+  describe("Liquidate position", function () {
+    let context: {
+      gravixVault: GravixVault;
+      usdt: ERC20Tokens;
+      stg: ERC20Tokens;
+      owner: Signer;
+      priceNode: Signer;
+      otherAccount: Signer;
+    };
+    const initialPrice = 1000n * USDT_DECIMALS;
+
+    before(async () => {
+      context = await loadFixture(deployOneYearLockFixture);
+    });
+    it("should open market position", async () => {
+      const { gravixVault, usdt, stg, owner, priceNode } = context;
+      await gravixVault.depositLiquidity({
+        amount: 1000n * USDT_DECIMALS,
+      });
+      await gravixVault.contract
+        .addMarkets([basic_config])
+        .then((res) => res.wait());
+      const collateral = 10n * USDT_DECIMALS;
+
+      await usdt.approve(gravixVault.contract, collateral);
+      const leverage = LEVERAGE_DECIMALS * 10n;
+
+      const timestamp = await time.latest();
+      const signature = await PriceService.getPriceSignature({
+        price: initialPrice,
+        timestamp,
+        signer: priceNode,
+        marketIdx: MARKET_IDX,
+      });
+      const { expectedPrice, position, market } = await getOpenPositionInfo({
+        initialPrice,
+        leverage,
+        collateral,
+        gravixVault,
+        positionType: PositionType.Long,
+        marketIdx: MARKET_IDX,
+      });
+      await expect(
+        gravixVault.contract.openMarketPosition(
+          MARKET_IDX,
+          PositionType.Long,
+          collateral,
+          expectedPrice,
+          leverage,
+          100,
+          initialPrice,
+          timestamp,
+          signature,
+        ),
+      ).to.emit(gravixVault.contract, "MarketOrderExecution");
+    });
+    it("Liquidate position", async () => {
+      const { gravixVault, usdt, stg, owner, priceNode, otherAccount } =
+        context;
+      const positionView = await gravixVault.contract.getPositionView({
+        positionKey: 0,
+        assetPrice: initialPrice * 100n,
+        user: await owner.getAddress(),
+        funding: {
+          accLongUSDFundingPerShare: 0,
+          accShortUSDFundingPerShare: 0,
+        },
+      });
+      const updatedLiquidationPrice =
+        positionView.liquidationPrice - PRICE_DECIMALS;
+      const liquidationSignature = await PriceService.getPriceSignature({
+        price: updatedLiquidationPrice,
+        marketIdx: MARKET_IDX,
+        signer: priceNode,
+        timestamp: await time.latest(),
+      });
+
+      {
+        const positionView = await gravixVault.contract.getPositionView({
+          positionKey: 0,
+          assetPrice: updatedLiquidationPrice,
+          user: await owner.getAddress(),
+          funding: {
+            accLongUSDFundingPerShare: 0,
+            accShortUSDFundingPerShare: 0,
+          },
+        });
+        expect(positionView.liquidate).to.be.true;
+      }
+
+      const tx = await gravixVault.contract
+        .connect(otherAccount)
+        .liquidatePositions([
+          {
+            assetPrice: updatedLiquidationPrice,
+            timestamp: await time.latest(),
+            marketIdx: MARKET_IDX,
+            signature: liquidationSignature,
+            positions: [
+              {
+                positionKey: 0,
+                user: await owner.getAddress(),
+              },
+            ],
+          },
+        ])
+        .then((res) => res.wait());
+
+      const liquidationEvent = await gravixVault.contract
+        .queryFilter(
+          gravixVault.contract.getEvent("LiquidatePosition"),
+          tx!.blockNumber,
+        )
+        .then((res) => res[0]);
+      expect(liquidationEvent.args.liquidator).to.be.eq(
+        await otherAccount.getAddress(),
+      );
+      expect(liquidationEvent.args.user).to.be.eq(await owner.getAddress());
+
+      const usdtTransferEvent = await usdt
+        .queryFilter(usdt.getEvent("Transfer"), tx!.blockNumber)
+        .then((res) => res[0]);
     });
   });
 });

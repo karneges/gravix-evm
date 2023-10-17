@@ -141,7 +141,58 @@ abstract contract GravixMarketPositions is GravixMarkets {
                 emit Debt(msg.sender, debt);
             }
             uint userNetUsdt = uint(int(collateral) + pnlWithFees - int(debt) - int(_positionView.closeFee));
-            IERC20(usdt).transfer(msg.sender, userNetUsdt);
+            usdt.transfer(msg.sender, userNetUsdt);
+        }
+
+    }
+
+    function liquidatePositions(LiquidationConfig[] memory liquidationConfig) public {
+        for (uint i = 0; i < liquidationConfig.length; i++) {
+            LiquidationConfig memory config = liquidationConfig[i];
+
+            require(!markets[config.marketIdx].paused, "Market closed");
+            require(_checkSign(config.assetPrice, config.timestamp, config.marketIdx, config.signature));
+
+            liquidatePositionsByMarket(config.marketIdx, config.assetPrice, config.positions);
+        }
+    }
+
+    function liquidatePositionsByMarket(uint marketIdx, uint assetPrice, PositionIdx[] memory _positions) internal {
+        Funding memory _funding = _updateFunding(marketIdx, assetPrice);
+        for(uint i = 0; i < _positions.length; i++) {
+            PositionIdx memory positionIdx = _positions[i];
+            Position memory position = positions[positionIdx.user][positionIdx.positionKey];
+            require(position.initialCollateral > 0, "Position not found");
+            require(position.marketIdx == marketIdx, "Position doesn't match marketIdx");
+
+            PositionView memory positionView = _getPositionView(
+                position,
+                ViewInputInternal({
+                    funding: _funding,
+                    assetPrice: assetPrice
+            }));
+
+            require(positionView.liquidate, "Position is not liquidatable");
+            delete positions[positionIdx.user][positionIdx.positionKey];
+
+            uint collateral = positionView.position.initialCollateral - positionView.position.openFee;
+            collateralReserve -= collateral;
+            uint initialPositionSizeAsset = calculatePositionAssetSize(collateral, positionView.position.leverage, positionView.position.openPrice);
+            _removePositionFromMarket(
+                positionView.position.marketIdx,
+                initialPositionSizeAsset,
+                assetPrice,
+                positionView.position.positionType
+            );
+
+            uint liquidatorReward = Math.mulDiv(collateral, liquidationParams.rewardShare, Constants.HUNDRED_PERCENT);
+
+            _increaseInsuranceFund(collateral - liquidatorReward);
+
+            emit LiquidatePosition(positionIdx.user, msg.sender, positionIdx.positionKey, positionView);
+
+            usdt.transfer(msg.sender, liquidatorReward);
+
         }
 
     }
