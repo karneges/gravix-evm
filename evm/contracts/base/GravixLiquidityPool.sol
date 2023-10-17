@@ -91,7 +91,7 @@ abstract contract GravixLiquidityPool is GravixBase {
         poolAssets.balance -= usdtAmount;
         poolAssets.stgUsdtSupply -= stgUsdtAmount;
         emit LiquidityPoolWithdraw(msg.sender, usdtAmount, stgUsdtAmount);
-
+        usdt.transfer(msg.sender, usdtAmount);
     }
 
     function stgUsdtToUsdt(uint stgAmount) public view returns (uint usdtAmount) {

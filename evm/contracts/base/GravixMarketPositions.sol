@@ -72,14 +72,15 @@ abstract contract GravixMarketPositions is GravixMarkets {
         _collectOpenFee(newPosition.openFee);
         collateralReserve += newPosition.initialCollateral - newPosition.openFee;
 
-        positions[msg.sender][requestNonce] = newPosition;
+        uint currentUserPositionIdx = userPositionCount[msg.sender];
+
+        positions[msg.sender][currentUserPositionIdx] = newPosition;
         emit MarketOrderExecution(
             msg.sender,
             newPosition,
-            requestNonce
+            currentUserPositionIdx
         );
-        requestNonce += 1;
-
+        userPositionCount[msg.sender] += 1;
     }
 
     function closeMarketPosition(

@@ -172,6 +172,7 @@ describe("Lock", function () {
           signature,
         ),
       ).to.emit(gravixVault.contract, "MarketOrderExecution");
+
       const userPosition = await gravixVault.contract.positions(owner, 0);
       const openFeeExpected =
         (position * market.fees.openFeeRate) / PERCENT_100;

@@ -16,8 +16,12 @@ abstract contract GravixStorage is IGravix {
                 uint => IGravix.Position
             )
     ) public positions;
+
+    mapping(address => uint) public userPositionCount;
+
     mapping(uint => string) public marketTickers;
     mapping (uint => IGravix.Market) public markets;
+    uint marketCount = 0;
     uint public requestNonce = 0;
     address public priceNode;
     InsuranceFund public insuranceFund;
@@ -46,7 +50,7 @@ abstract contract GravixStorage is IGravix {
     uint minPositionCollateral = 5 * Constants.USDT_DECIMALS; // 5$
     bool paused;
 
-    uint marketCount = 0;
+
     uint[2] openFeeDistributionSchema = [Constants.HUNDRED_PERCENT, 0];
     uint[2] closeFeeDistributionSchema = [0, Constants.HUNDRED_PERCENT];
     enum FeeDistributionSchema { Pool, InsuranceFund }

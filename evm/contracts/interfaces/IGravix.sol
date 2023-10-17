@@ -155,4 +155,16 @@ interface IGravix {
         address user;
         uint positionKey;
     }
+
+    struct UserPositionInfo {
+        uint positionIdx;
+        Position position;
+    }
+
+    struct MarketInfo {
+        uint marketIdx;
+        string ticker;
+        Market market;
+    }
+
 }

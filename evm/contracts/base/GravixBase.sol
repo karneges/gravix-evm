@@ -46,4 +46,18 @@ abstract contract GravixBase is GravixStorage {
             marketCount: marketCount
         });
     }
+
+    function getUserPositions(address user) public view returns(UserPositionInfo[] memory userPositionsInfo) {
+        uint userPositionCount = userPositionCount[user];
+        userPositionsInfo = new UserPositionInfo[](userPositionCount);
+        for (uint i = 0; i < userPositionCount; i++) {
+            if (positions[user][i].initialCollateral == 0) {
+                continue;
+            }
+            userPositionsInfo[i] = UserPositionInfo({
+                positionIdx: i,
+                position: positions[user][i]
+            });
+        }
+    }
 }

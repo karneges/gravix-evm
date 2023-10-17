@@ -39,4 +39,15 @@ abstract contract GravixMarkets is GravixOrderHelpers {
             emit NewMarket(_marketConfig);
         }
     }
+
+    function getAllMarkets() public view returns(MarketInfo[] memory marketInfos) {
+        marketInfos = new MarketInfo[](marketCount);
+        for (uint i = 0; i < marketCount; i++) {
+            marketInfos[i] = MarketInfo({
+                marketIdx: i,
+                market: markets[i],
+                ticker: marketTickers[i]
+            });
+        }
+    }
 }
