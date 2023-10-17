@@ -1,0 +1,108 @@
+@use 'mixins';
+@import 'reset';
+
+@layer reset, defaults, components;
+
+@layer defaults {
+    body {
+        font-kerning: auto;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.2;
+        font-style: normal;
+        font-stretch: normal;
+        letter-spacing: normal;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+    }
+
+    html,
+    body {
+        height: 100%;
+        max-width: 100%;
+    }
+
+    .root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .main {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+header .ant-typography {
+    .main--light &  {
+        color: white;
+    }
+}
+
+.ant-table--cursor {
+    tbody tr {
+        cursor: pointer;
+    }
+}
+
+.ant-card-body--contrast {
+    .ant-card-body {
+        background-color: #f2f2f2;
+    }
+}
+
+.lock-logo {
+    max-width: 750px;
+    animation: lock-move infinite both 3s ease;
+}
+
+.tab-op .ant-tabs-tab {
+    margin-left: 10px !important;
+}
+
+.nowrap {
+    flex-wrap: nowrap !important;
+}
+
+.sidebar-wrap {
+    width: 200px !important;
+}
+
+.pipes-row__check {
+    justify-content: start !important;
+}
+.ant-tabs-nav {
+    width: 100% !important;
+}
+
+.ant-tabs-tab {
+    flex: 1;
+    justify-content: center;
+}
+
+.ant-tabs-nav > div:nth-of-type(1) {
+    display: unset !important;
+    width: 100% !important;
+}
+
+@media (max-width: 992px) {
+    .menu-adaptive .ant-menu-title-content {
+        display: none !important;
+    }
+
+    .table-min table {
+        min-width: 800px !important;
+    }
+}
+
+.ant-input-number {
+    .ant-input-number-wrapper-disabled & {
+        background: transparent!important;
+        background-color: transparent!important;
+    }
+}

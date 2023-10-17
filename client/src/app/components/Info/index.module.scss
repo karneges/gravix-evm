@@ -1,0 +1,21 @@
+.info {
+    grid-column-start: 1;
+    grid-column-end: 2;
+}
+
+.select {
+    min-width: 120px;
+}
+
+.label {
+    font-size: 12px;
+    margin-bottom: -2px;
+}
+
+.value {
+    font-size: 16px;
+}
+
+.item {
+    min-width: 100px;
+}
