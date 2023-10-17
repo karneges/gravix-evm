@@ -1,11 +1,12 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
-import { Gravix, StgUsdtToken, UsdtToken } from '../../config.js'
+import { GravixVault, StgUsdtToken, UsdtToken } from '../../config.js'
 import { Reactions } from '../utils/reactions.js'
-import { getTokenBalance } from '../utils/gravix.js'
-import { ethers } from 'ethers'
-import { GravixAbi } from '../../assets/abi/Gravix.js'
+import { approveTokens, getTokenBalance } from '../utils/gravix.js'
+import { ethers, BaseContract } from 'ethers'
+import GravixAbi from '../../assets/abi/Gravix.json'
 import { normalizeAmount } from '../utils/normalize-amount.js'
+import { Gravix } from '../../assets/misc/Gravix.js'
 
 export enum EarnAction {
     Deposit = 'deposit',
@@ -138,10 +139,20 @@ export class EarnStore {
                 throw new Error('amount must be defined')
             }
 
-            const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
-            const signer = await browserProvider.getSigner()
-            const gravix = new ethers.Contract(Gravix, GravixAbi, signer)
+            if (!this.wallet.address) {
+                throw new Error('wallet.address must be defined')
+            }
+
             const amount = normalizeAmount(this.amount, 6)
+
+            await approveTokens(UsdtToken, this.wallet.address, GravixVault, amount, this.wallet.provider)
+
+            const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
+
+            const signer = await browserProvider.getSigner()
+
+            const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+
             await gravix.depositLiquidity(amount)
         } catch (e) {
             console.error(e)
