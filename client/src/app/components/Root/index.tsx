@@ -17,30 +17,41 @@ export const Root: React.FC = () => {
     return (
         <EvmWalletProvider>
             {evmWallet => {
-                // eslint-disable-next-line react-hooks/rules-of-hooks
-                const DepositProvider = useProvider(DepositStore, evmWallet)
-
                 return (
                     <GravixProvider>
-                        <MarketProvider>
-                            {market => {
-                                // eslint-disable-next-line react-hooks/rules-of-hooks
-                                const PriceProvider = useProvider(PriceStore, market)
-                                return (
-                                    <PriceProvider>
-                                        <DepositProvider>
-                                            <Router>
-                                                <Switch>
-                                                    <Route path={routes.main}>
-                                                        <RootContent />
-                                                    </Route>
-                                                </Switch>
-                                            </Router>
-                                        </DepositProvider>
-                                    </PriceProvider>
-                                )
-                            }}
-                        </MarketProvider>
+                        {gravix => (
+                            <MarketProvider>
+                                {market => {
+                                    // eslint-disable-next-line react-hooks/rules-of-hooks
+                                    const PriceProvider = useProvider(PriceStore, market)
+                                    return (
+                                        <PriceProvider>
+                                            {price => {
+                                                // eslint-disable-next-line react-hooks/rules-of-hooks
+                                                const DepositProvider = useProvider(
+                                                    DepositStore,
+                                                    evmWallet,
+                                                    price,
+                                                    gravix,
+                                                )
+
+                                                return (
+                                                    <DepositProvider>
+                                                        <Router>
+                                                            <Switch>
+                                                                <Route path={routes.main}>
+                                                                    <RootContent />
+                                                                </Route>
+                                                            </Switch>
+                                                        </Router>
+                                                    </DepositProvider>
+                                                )
+                                            }}
+                                        </PriceProvider>
+                                    )
+                                }}
+                            </MarketProvider>
+                        )}
                     </GravixProvider>
                 )
             }}

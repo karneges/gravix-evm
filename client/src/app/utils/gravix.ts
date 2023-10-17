@@ -1,4 +1,4 @@
-import { Market } from "../stores/MarketStore.js"
+import { Market } from '../stores/MarketStore.js'
 
 export const mapChartSymbol = (market: Market) => {
     switch (market) {

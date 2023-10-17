@@ -23,6 +23,9 @@ export class GravixStore {
         this.initApp()
     }
 
+    public readonly priceDecimals = 8
+    public readonly baseNumber = 6
+
     isDarkMode = false
     gravixAccounts: `0x${string}`[] = []
     // gravixAccountsCompleted: AccountWalletWithPrivateKey[] = []
