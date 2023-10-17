@@ -7,8 +7,26 @@ const config: HardhatUserConfig = {
   networks: {
     linea: {
       url: "https://rpc.goerli.linea.build",
-      accounts: [process.env.PRIVATE_KEY_MUMBAI!, process.env.PRIVATE_KEY_PRICE_NODE!],
+      accounts: [
+        process.env.PRIVATE_KEY_MUMBAI!,
+        process.env.PRIVATE_KEY_PRICE_NODE!,
+      ],
     },
+  },
+  etherscan: {
+    apiKey: {
+      linea: process.env.LINEASCAN_API_KEY!,
+    },
+    customChains: [
+      {
+        network: "linea",
+        chainId: 59140,
+        urls: {
+          apiURL: "https://api-testnet.lineascan.build/api",
+          browserURL: "https://goerli.lineascan.build/address",
+        },
+      },
+    ],
   },
   solidity: {
     version: "0.8.19",

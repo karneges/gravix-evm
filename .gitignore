@@ -4,8 +4,10 @@ coverage
 coverage.json
 typechain
 typechain-types
+api/node_modules
+api/dist
+api/.env
 
 # Hardhat files
 cache
 artifacts
-
