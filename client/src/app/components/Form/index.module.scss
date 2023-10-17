@@ -1,0 +1,50 @@
+.form {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    grid-row-start: 1;
+    grid-row-end: 4;
+    height: fit-content;
+}
+
+.longTab {
+    span {
+        color: rgba(81, 208, 81, 0.8)!important;
+        font-weight: 600;
+    }
+}
+
+.shortTab {
+    span {
+        color: rgba(223, 52, 52, 0.8)!important;
+        font-weight: 600;
+    }
+}
+
+.bigInput {
+    width: 100%;
+
+    input {
+        min-height: 44px;
+        font-size: 20px!important;
+    }
+}
+
+.leverInput {
+    input {
+        min-height: 36px;
+        font-size: 20px!important;
+    }
+}
+
+.collateral {
+    margin-top: 36px;
+}
+
+.block {
+    margin-top: 18px;
+}
+
+.price {
+    font-size: 20px;
+    font-weight: 600;
+}
