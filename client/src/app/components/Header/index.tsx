@@ -1,10 +1,12 @@
-import { Typography , Layout, Button, Row } from 'antd'
+import { Typography, Layout, Button, Row } from 'antd'
 import { observer } from 'mobx-react-lite'
-import { generatePath } from 'react-router-dom'
-import { IoMoonOutline, IoSunny } from "react-icons/io5/index.js";
+import { NavLink, generatePath } from 'react-router-dom'
+import { IoMoonOutline, IoSunny } from 'react-icons/io5/index.js'
 import { useStore } from '../../hooks/useStore.js'
 import { GravixStore } from '../../stores/GravixStore.js'
-import { EvmWallet } from '../EvmWallet/index.js';
+import { EvmWallet } from '../EvmWallet/index.js'
+import { routes } from '../../routes/index.js'
+import styles from './index.module.scss'
 
 const headerStyle: React.CSSProperties = {
     width: '100%',
@@ -17,11 +19,12 @@ export const Header = observer(() => {
     return (
         <Layout.Header style={headerStyle}>
             <Row style={{ height: '100%' }} justify="space-between" align="middle">
-                <div style={{ cursor: 'pointer' }} onClick={() => generatePath('/')}>
-                    <Typography.Text>
-                        AztecGravix
-                    </Typography.Text>
+                <div className={styles.menu}>
+                    <Typography.Text>AztecGravix</Typography.Text>
+                    <NavLink to={generatePath(routes.main)}>Trade</NavLink>
+                    <NavLink to={generatePath(routes.earn)}>Earn</NavLink>
                 </div>
+
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <EvmWallet />
 

@@ -1,6 +1,4 @@
 import * as React from 'react'
-import { Route, BrowserRouter as Router, Switch } from 'react-router-dom'
-import { routes } from '../../routes/index.js'
 import { RootContent } from './content.js'
 import { GravixStore } from '../../stores/GravixStore.js'
 import { useProvider } from '../../hooks/useStore.js'
@@ -25,13 +23,7 @@ export const Root: React.FC = () => {
                         return (
                             <PriceProvider>
                                 <FormProvider>
-                                    <Router>
-                                        <Switch>
-                                            <Route path={routes.main}>
-                                                <RootContent />
-                                            </Route>
-                                        </Switch>
-                                    </Router>
+                                    <RootContent />
                                 </FormProvider>
                             </PriceProvider>
                         )

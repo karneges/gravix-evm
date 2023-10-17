@@ -1,16 +1,14 @@
 import * as React from 'react'
+import { Route, BrowserRouter as Router, Switch } from 'react-router-dom'
 import { useStore } from '../../hooks/useStore.js'
 import { GravixStore } from '../../stores/GravixStore.js'
 import { Header } from '../Header/index.js'
-
-import { Chart } from '../Chart/index.js'
-import { Form } from '../Form/index.js'
-import { Info } from '../Info/index.js'
-import { Positions } from '../Positions/index.js'
+import { routes } from '../../routes/index.js'
 import { Layout, ConfigProvider, theme } from 'antd'
-import styles from './index.module.scss'
 import classNames from 'classnames'
 import { observer } from 'mobx-react-lite'
+import { Earn } from '../Earn/index.js'
+import { Trade } from '../Trade/index.js'
 
 export const RootContent: React.FC = observer(() => {
     const gravixData = useStore(GravixStore)
@@ -23,17 +21,20 @@ export const RootContent: React.FC = observer(() => {
             }}
         >
             <main className={classNames('main', gravixData.getThemeMode ? 'main--dark' : 'main--light')}>
-                <Layout>
-                    <Header />
-                    <Layout style={{ padding: "20px 12px"}}>
-                        <div className={styles.layout}>
-                            <Info />
-                            <Chart />
-                            <Form />
-                            <Positions />
-                        </div>
+                <Router>
+                    <Layout>
+                        <Header />
+
+                        <Switch>
+                            <Route exact path={routes.main}>
+                                <Trade />
+                            </Route>
+                            <Route exact path={routes.earn}>
+                                <Earn />
+                            </Route>
+                        </Switch>
                     </Layout>
-                </Layout>
+                </Router>
             </main>
         </ConfigProvider>
     )

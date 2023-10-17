@@ -41,7 +41,6 @@ module.exports = {
     'require-await': 2,
     'no-console': 'warn',
     'no-constant-condition': 'off',
-    camelcase: 2,
     'no-restricted-imports': [
       'error',
       {

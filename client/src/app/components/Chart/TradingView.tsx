@@ -1,6 +1,3 @@
-/* eslint-disable camelcase */
-/* eslint-disable no-console */
-
 import React, { useEffect } from 'react'
 
 import styles from './index.module.scss'
@@ -53,7 +50,12 @@ export const TradingView: React.FC = observer(() => {
 
         return () => {
             if (widget) {
-                widget.remove()
+                try {
+                    widget.remove()
+                }
+                catch (e) {
+                    console.error(e)
+                }
             }
         }
     }, [market.market, gravix.isDarkMode])
