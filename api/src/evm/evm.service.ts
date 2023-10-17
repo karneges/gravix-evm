@@ -21,7 +21,7 @@ const CHAIN_ID_TO_NETWORK: Record<number, Networks> = {
 type Networks = keyof typeof RPC_URL;
 type ADDRESSES = Record<Networks, string>;
 
-export const USDT_DECIMALS = 10 ** 6;
+export const PRICE_DECIMALS = 10 ** 8;
 @Injectable()
 export class EvmService {
   vaultAddresses: ADDRESSES = {} as any;
@@ -89,7 +89,7 @@ export class EvmService {
     const price = await this.binanceService
       .getPriceForTicker(ticker)
       .then((price) => {
-        return new BigNumber(price).multipliedBy(USDT_DECIMALS).toNumber();
+        return new BigNumber(price).multipliedBy(PRICE_DECIMALS).toNumber();
       });
     const timestamp = Date.now();
     const signature = await this.priceNodeWallet.signMessage(
