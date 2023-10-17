@@ -3,6 +3,7 @@ import { Market } from '../stores/MarketStore.js'
 import { MetaMaskInpageProvider } from '@metamask/providers'
 import { ERC20Abi } from '../../assets/abi/ERC20.js'
 import { BigNumber } from 'bignumber.js'
+import { delay } from './delay.js'
 
 export const mapChartSymbol = (market: Market) => {
     switch (market) {
@@ -53,8 +54,19 @@ export const approveTokens = async (
     const signer = await browserProvider.getSigner()
     const ERC20Token = new ethers.Contract(token, ERC20Abi, signer)
     const allowance = await ERC20Token.allowance(user, vault)
-    const approvalDelta = new BigNumber(allowance.toString()).minus(amount)
-    if (approvalDelta.lt(0)) {
-        await ERC20Token.approve(vault, approvalDelta.abs().toFixed())
+    const delta = new BigNumber(allowance.toString()).minus(amount)
+
+    if (delta.lt(0)) {
+        await ERC20Token.approve(vault, amount)
+
+        let count = 0
+        let ready = false
+        while (!ready && count < 100) {
+            await delay(2000)
+            const allowance = await ERC20Token.allowance(user, vault)
+            const delta = new BigNumber(allowance.toString()).minus(amount)
+            ready = delta.gte(0)
+            count += 1
+        }
     }
 }
