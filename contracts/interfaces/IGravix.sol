@@ -89,6 +89,7 @@ interface IGravix {
         uint noiWeight;
         uint maxLeverage;
         uint depthAsset;
+        string ticker;
         Fees fees;
     }
 

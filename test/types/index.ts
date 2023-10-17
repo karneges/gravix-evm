@@ -13,6 +13,7 @@ export interface MarketConfig {
     borrowBaseRatePerHour: number;
     fundingBaseRatePerHour: number;
   };
+  ticker: string;
 }
 export enum PositionType {
   Long,

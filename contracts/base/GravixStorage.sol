@@ -16,7 +16,7 @@ abstract contract GravixStorage is IGravix {
                 uint => IGravix.Position
             )
     ) public positions;
-
+    mapping(uint => string) public marketTickers;
     mapping (uint => IGravix.Market) public markets;
     uint public requestNonce = 0;
     address public priceNode;

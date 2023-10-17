@@ -33,6 +33,7 @@ abstract contract GravixMarkets is GravixOrderHelpers {
             newMarket.fees = _marketConfig.fees;
 
             markets[marketCount] = newMarket;
+            marketTickers[marketCount] = _marketConfig.ticker;
             marketCount += 1;
 
             emit NewMarket(_marketConfig);

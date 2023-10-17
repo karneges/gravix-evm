@@ -33,6 +33,7 @@ const basic_config: MarketConfig = {
     borrowBaseRatePerHour: 0, // disable by default
     fundingBaseRatePerHour: 0, // disable by default
   },
+  ticker: "BTC/USDT",
 };
 const MARKET_IDX = 0;
 describe("Lock", function () {
@@ -436,10 +437,22 @@ describe("Lock", function () {
         await otherAccount.getAddress(),
       );
       expect(liquidationEvent.args.user).to.be.eq(await owner.getAddress());
+      const updatedCollateral =
+        positionView.position.initialCollateral - positionView.position.openFee;
 
+      const vaultDetails = await gravixVault.contract.getDetails();
+
+      const liquidationReward =
+        (updatedCollateral * vaultDetails.liquidation.rewardShare) /
+        PERCENT_100;
       const usdtTransferEvent = await usdt
         .queryFilter(usdt.getEvent("Transfer"), tx!.blockNumber)
         .then((res) => res[0]);
+
+      expect(usdtTransferEvent.args.to).to.be.eq(
+        await otherAccount.getAddress(),
+      );
+      expect(usdtTransferEvent.args.value).to.be.eq(liquidationReward);
     });
   });
 });
