@@ -5,6 +5,7 @@ import styles from './index.module.scss'
 import { useStore } from '../../hooks/useStore.js'
 import { EarnAction, EarnStore } from '../../stores/EarnStore.js'
 import { observer } from 'mobx-react-lite'
+import { decimalAmount } from '../../utils/decimal-amount.js'
 
 export const EarnForm: React.FC = observer(() => {
     const form = useStore(EarnStore)
@@ -14,8 +15,12 @@ export const EarnForm: React.FC = observer(() => {
     }
 
     const onChangeTab = (e: string) => {
-        console.log(e)
         form.setAction(e as EarnAction)
+    }
+
+    const onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
+        e.preventDefault()
+        form.submit()
     }
 
     return (
@@ -36,24 +41,35 @@ export const EarnForm: React.FC = observer(() => {
                     ]}
                 />
 
-                <form>
-                    <Input className={styles.input} value={form.amount} onChange={onChangeAmount} />
+                <form onSubmit={onSubmit}>
+                    <Input
+                        className={styles.input}
+                        value={form.amount}
+                        onChange={onChangeAmount}
+                        disabled={form.loading}
+                    />
 
                     <div className={styles.info}>
                         {form.action === EarnAction.Deposit ? (
                             <Typography.Text>
-                                Balance: {form.usdtBalance ? `${form.usdtBalance} USDT` : ''}
+                                Balance: {form.usdtBalance ? `${decimalAmount(form.usdtBalance, 6)} USDT` : ''}
                             </Typography.Text>
                         ) : form.action === EarnAction.Withdraw ? (
                             <Typography.Text>
-                                Balance: {form.stgUsdtBalance ? `${form.stgUsdtBalance} stgUSDT` : ''}
+                                Balance: {form.stgUsdtBalance ? `${decimalAmount(form.stgUsdtBalance, 6)} stgUSDT` : ''}
                             </Typography.Text>
                         ) : null}
                     </div>
 
-                    <Button type="primary" block>
-                        Deposit
-                    </Button>
+                    {form.action === EarnAction.Deposit ? (
+                        <Button type="primary" block disabled={form.loading}>
+                            Deposit
+                        </Button>
+                    ) : form.action === EarnAction.Withdraw ? (
+                        <Button type="primary" block disabled={form.loading}>
+                            Withdraw
+                        </Button>
+                    ) : null}
                 </form>
             </Card>
         </div>
