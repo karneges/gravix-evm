@@ -25,8 +25,25 @@ async function main() {
     "Gravix",
     "0x10e5E8f37f77c9E886D388B313787A2DE6246180",
   );
-  const tx = await gravix.addMarkets([basic_config]).then((res) => res.wait());
+  const faucet = await ethers.getContractAt(
+    "ERC20Faucet",
+    "0x9049aF67Bef5C3c2ABD71b47F1E7D56407AF6AD9",
+  );
+  const usdtToken = await ethers.getContractAt(
+    "ERC20Tokens",
+    "0x248c2193aAcDebCdD7a351968767c81FBF7B1ecB",
+  );
+  {
+    const tx = await usdtToken.transferOwnership(faucet);
+    console.log(tx.hash);
+  }
+  const tx = await faucet
+    .setToken("0x248c2193aAcDebCdD7a351968767c81FBF7B1ecB")
+    .then((res) => res.wait());
   console.log(tx!.hash);
+
+  // const tx = await gravix.addMarkets([basic_config]).then((res) => res.wait());
+  // console.log(tx!.hash);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
