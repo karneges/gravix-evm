@@ -3,13 +3,12 @@ import { MetaMaskInpageProvider } from '@metamask/providers'
 import { Web3 } from 'web3'
 
 type State = {
-    chainId?: string,
-    address?: string,
-    balance?: string,
+    chainId?: string
+    address?: string
+    balance?: string
 }
 
 export class EvmWalletStore {
-
     protected state: State = {}
 
     public provider?: MetaMaskInpageProvider
@@ -17,9 +16,13 @@ export class EvmWalletStore {
     public web3?: Web3
 
     constructor() {
-        makeAutoObservable(this, {}, {
-            autoBind: true,
-        })
+        makeAutoObservable(
+            this,
+            {},
+            {
+                autoBind: true,
+            },
+        )
     }
 
     async init(): Promise<void> {
@@ -35,8 +38,7 @@ export class EvmWalletStore {
             this.provider.on('disconnect', this.disconnect)
 
             await this.connect()
-        }
-        catch (e) {
+        } catch (e) {
             console.error(e)
         }
     }
@@ -55,9 +57,7 @@ export class EvmWalletStore {
     }
 
     async syncData(): Promise<void> {
-        let address: string,
-            chainId: string,
-            balance: string
+        let address: string, chainId: string, balance: string
 
         if (this.provider) {
             try {
@@ -69,8 +69,7 @@ export class EvmWalletStore {
                 address = _address
                 chainId = _chainId
                 balance = _balance
-            }
-            catch (e) {
+            } catch (e) {
                 console.error('evm sync data', e)
             }
         }
@@ -107,5 +106,4 @@ export class EvmWalletStore {
 
         return provider as MetaMaskInpageProvider
     }
-
 }

@@ -83,9 +83,7 @@ export const Form: React.FC = observer(() => {
             <Col className={styles.block}>
                 <Title level={4}>Price</Title>
                 <Paragraph className={styles.price}>
-                    {price.price ? (
-                        `${new BigNumber(price.price).toFixed(2)} $`
-                    ) : '\u200B'}
+                    {price.price ? `${new BigNumber(price.price).toFixed(2)} $` : '\u200B'}
                 </Paragraph>
             </Col>
             <Button style={{ width: '100%' }} type="primary" size="large" onClick={() => console.log('submit')}>

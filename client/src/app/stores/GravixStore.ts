@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from 'mobx'
+import { makeAutoObservable } from 'mobx'
 // import { createPXEClient, getSandboxAccountsWallets, AztecAddress, Wallet, AccountWalletWithPrivateKey } from '@aztec/aztec.js';
 // import {VaultContract} from '../../artifacts/Vault.js'
 

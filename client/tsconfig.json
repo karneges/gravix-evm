@@ -1,31 +1,48 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dest",
-    "target": "es2020",
-    "lib": [
-      "esnext",
-      "dom",
-      "DOM.Iterable"
-    ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "declaration": true,
-    "allowSyntheticDefaultImports": true,
-    "allowJs": true,
-    "esModuleInterop": true,
-    "downlevelIteration": true,
-    "inlineSourceMap": true,
-    "declarationMap": true,
-    "importHelpers": true,
-    "resolveJsonModule": true,
-    "composite": true,
-    "skipLibCheck": true,
-    "jsx": "react-jsx"
+      "allowJs": true,
+      "alwaysStrict": true,
+      "allowSyntheticDefaultImports": true,
+      "baseUrl": ".",
+      "declaration": false,
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "incremental": true,
+      "isolatedModules": true,
+      "jsx": "react",
+      "lib": [
+          "dom",
+          "dom.iterable",
+          "esnext"
+      ],
+      "moduleResolution": "node",
+      "noEmit": true,
+      "noFallthroughCasesInSwitch": true,
+      "noImplicitAny": true,
+      "noImplicitReturns": true,
+      "noImplicitThis": true,
+      "noUnusedParameters": true,
+      "paths": {
+          "*": ["node_modules/@types", "types/*"],
+          "@/*": ["src/*"]
+      },
+      "resolveJsonModule": true,
+      "skipLibCheck": true,
+      "strict": true,
+      "strictFunctionTypes": true,
+      "strictNullChecks": true,
+      "target": "esnext"
   },
+  "exclude": [
+      "webpack.config.js",
+      "node_modules",
+      "**/charting-library",
+      "**/datafeeds"
+  ],
   "include": [
-    "src",
-    "src/**/*.json"
+      "src/**/*.ts",
+      "src/**/*.tsx",
+      "src/**/*.d.ts",
+      "node_modules/@types/node/globals.d.ts"
   ]
 }
