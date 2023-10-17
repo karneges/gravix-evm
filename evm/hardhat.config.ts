@@ -7,7 +7,7 @@ const config: HardhatUserConfig = {
   networks: {
     linea: {
       url: "https://rpc.goerli.linea.build",
-      accounts: [process.env.PRIVATE_KEY_MUMBAI!],
+      accounts: [process.env.PRIVATE_KEY_MUMBAI!, process.env.PRIVATE_KEY_PRICE_NODE!],
     },
   },
   solidity: {

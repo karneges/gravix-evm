@@ -1,23 +1,27 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  // const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  // const unlockTime = currentTimestampInSeconds + 60;
-  //
-  // const lockedAmount = ethers.parseEther("0.001");
-  //
-  // const lock = await ethers.deployContract("Lock", [unlockTime], {
-  //   value: lockedAmount,
-  // });
-  //
-  // await lock.waitForDeployment();
-  const usdtToken = await ethers.deployContract("ERC20Tokens", []);
+  const [deployer, priceNode] = await ethers.getSigners();
+  const usdtToken = await ethers.deployContract("ERC20Tokens", [
+    "XUSDT",
+    "XUSDT",
+  ]);
+  console.log(`Usdt token ${await usdtToken.getAddress()}`);
+  const stgUsdtToken = await ethers.deployContract("ERC20Tokens", [
+    "stgXUSDT",
+    "stgXUSDT",
+  ]);
+  console.log(`StgUsdt token ${await stgUsdtToken.getAddress()}`);
+  const tokenFaucet = await ethers.deployContract("ERC20Faucet");
+  console.log(`TokenFaucet ${await tokenFaucet.getAddress()}`);
+  await tokenFaucet.setToken(await usdtToken.getAddress());
 
-  console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
-  );
+  const gravix = await ethers.deployContract("Gravix", [
+    usdtToken,
+    stgUsdtToken,
+    priceNode,
+  ]);
+  console.log(`Gravix ${await gravix.getAddress()}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -5,10 +5,11 @@ import "./interfaces/IERC20Minter.sol";
 
 contract ERC20Faucet is Ownable {
     IERC20Minter public tokenAddress;
-    constructor(address _tokenAddress){
+    constructor(){}
+
+    function setToken(address _tokenAddress) public onlyOwner {
         tokenAddress = IERC20Minter(_tokenAddress);
     }
-
     function mint(address to, uint256 amount) public {
         tokenAddress.mint(to, amount);
     }
