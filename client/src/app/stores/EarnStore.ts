@@ -1,8 +1,11 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
-import { StgUsdtToken, UsdtToken } from '../../config.js'
+import { Gravix, StgUsdtToken, UsdtToken } from '../../config.js'
 import { Reactions } from '../utils/reactions.js'
 import { getTokenBalance } from '../utils/gravix.js'
+import { ethers } from 'ethers'
+import { GravixAbi } from '../../assets/abi/Gravix.js'
+import { normalizeAmount } from '../utils/normalize-amount.js'
 
 export enum EarnAction {
     Deposit = 'deposit',
@@ -14,6 +17,7 @@ type State = {
     action: EarnAction
     usdtBalance?: string
     stgUsdtBalance?: string
+    loading?: boolean
 }
 
 const initialState: State = {
@@ -45,6 +49,10 @@ export class EarnStore {
 
     dispose() {
         this.reactions.destroy()
+    }
+
+    get loading(): boolean {
+        return !!this.state.loading
     }
 
     setAction(val: EarnAction): void {
@@ -108,7 +116,41 @@ export class EarnStore {
         })
     }
 
-    async deposit(): Promise<void> {}
+    submit(): void {
+        if (this.action === EarnAction.Deposit) {
+            this.deposit().catch(console.error)
+        } else if (this.action === EarnAction.Withdraw) {
+            this.withdraw().catch(console.error)
+        }
+    }
+
+    async deposit(): Promise<void> {
+        runInAction(() => {
+            this.state.loading = true
+        })
+
+        try {
+            if (!this.wallet.provider) {
+                throw new Error('wallet.provider must be defined')
+            }
+
+            if (!this.amount) {
+                throw new Error('amount must be defined')
+            }
+
+            const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
+            const signer = await browserProvider.getSigner()
+            const gravix = new ethers.Contract(Gravix, GravixAbi, signer)
+            const amount = normalizeAmount(this.amount, 6)
+            await gravix.depositLiquidity(amount)
+        } catch (e) {
+            console.error(e)
+        }
+
+        runInAction(() => {
+            this.state.loading = false
+        })
+    }
 
     async withdraw(): Promise<void> {}
 }
