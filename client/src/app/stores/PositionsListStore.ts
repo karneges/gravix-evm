@@ -1,11 +1,14 @@
 import { ethers, Contract, BaseContract } from 'ethers'
-import { makeAutoObservable } from 'mobx'
+import { makeAutoObservable, reaction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import { GravixVault } from '../../config.js'
 import GravixAbi from '../../assets/abi/Gravix.json'
 import { Gravix } from '../../assets/misc/index.js'
+import { Reactions } from '../utils/reactions.js'
 
 export class PositionsListStore {
+    protected reactions = new Reactions()
+
     constructor(protected evmWallet: EvmWalletStore) {
         makeAutoObservable(
             this,
@@ -15,8 +18,7 @@ export class PositionsListStore {
             },
         )
 
-        console.log(evmWallet, '!@@@')
-        this.initApp().catch(() => console.log('1'))
+        this.reactions.create(reaction(() => [this.evmWallet.address], this.initApp, { fireImmediately: true }))
     }
 
     positionsList = []
@@ -30,8 +32,9 @@ export class PositionsListStore {
         const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
         this.evmWallet.address
 
-        const arr = gravixContract.getUserPositions(this.evmWallet.address[0])
+        const arr = await gravixContract.getUserPositions(this.evmWallet.address)
         console.log(arr, 'arr')
+        console.log(arr[0][1][3].toString(), 'arr2')
     }
 
     public get allUserPositions(): any[] {
