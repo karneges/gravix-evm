@@ -1,16 +1,17 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
-
-  const lockedAmount = ethers.parseEther("0.001");
-
-  const lock = await ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
-
-  await lock.waitForDeployment();
+  // const currentTimestampInSeconds = Math.round(Date.now() / 1000);
+  // const unlockTime = currentTimestampInSeconds + 60;
+  //
+  // const lockedAmount = ethers.parseEther("0.001");
+  //
+  // const lock = await ethers.deployContract("Lock", [unlockTime], {
+  //   value: lockedAmount,
+  // });
+  //
+  // await lock.waitForDeployment();
+  const usdtToken = await ethers.deployContract("ERC20Tokens", []);
 
   console.log(
     `Lock with ${ethers.formatEther(
