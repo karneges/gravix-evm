@@ -9,13 +9,14 @@ import { PriceStore } from './PriceStore.js'
 import { GravixStore } from './GravixStore.js'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { normalizePercent } from '../utils/mix.js'
+import { GravixVault, UsdtToken } from '../../config.js'
+import { ERC20Abi } from '../../assets/abi/ERC20.js'
+import { approveTokens } from '../utils/gravix.js'
 
 export enum DepositType {
     LONG = '0',
     SHORT = '1',
 }
-
-const GRAVIX_VAULT = '0x10e5E8f37f77c9E886D388B313787A2DE6246180'
 
 export class DepositStore {
     protected reactions = new Reactions()
@@ -25,7 +26,7 @@ export class DepositStore {
     leverageVal = 1
     collateralVal = 1
     positionSizeVal = '1'
-    slippage = '0'
+    slippage = '1'
 
     constructor(
         protected evmWallet: EvmWalletStore,
@@ -60,35 +61,95 @@ export class DepositStore {
         this.leverageVal = val ? val : 1
     }
 
-    submitMarketOrder = async () => {
-        if (!this.evmWallet?.provider || !this.priceStore.price) return
+    approveToken = async () => {
+        if (!this.evmWallet?.provider) return
         const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
         const signer = await browserProvider.getSigner()
-        const gravixContract = new Contract(GRAVIX_VAULT, GravixAbi.abi, signer) as BaseContract as Gravix
-        // const iface = new ethers.utils.Interface(contract.abi)
-        console.log(1, 'SUBMIT')
-        // uint marketIdx
-        // PositionType positionType, // long(0)/Short(1)
-        // uint collateral, // 6 decimals number // тоже самое как в обычном гравиксе
-        // uint expectedPrice, // 8 decimals number // тоже самое как в обычном гравиксе
-        // uint leverage, // 6 decimals number // тоже самое как в обычном гравиксе
-        // uint maxSlippageRate, // % // тоже самое как в обычном гравиксе
-        // uint _assetPrice,  // данные поля вернёт ручка, по конкретному маркету
-        // uint timestamp,  //
-        // bytes calldata  signature //
-        const markets = await gravixContract.getAllMarkets()
-        // const btcMarket = markets[0][0].toString()
-        // const collateral = new BigNumber(this.collateralVal).shiftedBy(6)
-        console.log(markets[0][0].toString(), 'markets')
-        console.log(markets, 'markets')
-        // gravixContract.openMarketPosition(
-        //     btcMarket,
-        //     this.formDepositType,
-        //     collateral,
-        //     this.openPriceNormalized,
-        //     this.leverageNormalized,
-        //     this.slippageNormalized,
-        // )
+        const ERC20Token = new ethers.Contract(UsdtToken, ERC20Abi, signer)
+        const allowance = await ERC20Token.allowance(this.evmWallet.address, GravixVault)
+        const approvalDelta = new BigNumber(allowance.toString()).minus(
+            normalizeAmount('100000', this.gravix.baseNumber),
+        )
+        if (approvalDelta.lt(0)) {
+            await ERC20Token.approve(GravixVault, approvalDelta.abs().toFixed())
+        }
+    }
+
+    submitMarketOrder = async () => {
+        if (!this.evmWallet?.provider || !this.evmWallet.address) return
+        if (
+            !this.collateralNormalized ||
+            !this.openPriceNormalized ||
+            !this.leverageNormalized ||
+            !this.slippageNormalized ||
+            !this.priceStore.price
+        )
+            return
+
+        try {
+            await approveTokens(UsdtToken, this.evmWallet.address, GravixVault, '100000', this.evmWallet.provider)
+            const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
+            const signer = await browserProvider.getSigner()
+            const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+            const assetData = await (
+                await fetch('https://api-cc35d.ondigitalocean.app/signature', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        marketIdx: 0,
+                        chainId: 59140,
+                    }),
+                })
+            ).json()
+            // const iface = new ethers.utils.Interface(contract.abi)
+            console.log(1, 'SUBMIT')
+            console.log(assetData, 'assetPrice')
+            // uint marketIdx
+            // PositionType positionType, // long(0)/Short(1)
+            // uint collateral, // 6 decimals number // тоже самое как в обычном гравиксе
+            // uint expectedPrice, // 8 decimals number // тоже самое как в обычном гравиксе
+            // uint leverage, // 6 decimals number // тоже самое как в обычном гравиксе
+            // uint maxSlippageRate, // % // тоже самое как в обычном гравиксе
+            // uint _assetPrice,  // данные поля вернёт ручка, по конкретному маркету
+            // uint timestamp,  //
+            // bytes calldata  signature //
+            const markets = await gravixContract.getAllMarkets()
+            const btcMarket = markets[0][0].toString()
+            // const collateral = new BigNumber(this.collateralVal).shiftedBy(6)
+            console.log(markets[0][0].toString(), 'markets')
+            console.log(markets, 'markets')
+            console.log(
+                {
+                    market: btcMarket,
+                    type: this.formDepositType,
+                    collateral: this.collateralNormalized,
+                    openPrice: this.openPriceNormalized,
+                    leverage: this.leverageNormalized,
+                    slippage: this.slippageNormalized,
+                    price: assetData.price,
+                    timestamp: assetData.timestamp,
+                    sig: assetData.signature,
+                },
+                'PAYLOAD',
+            )
+            await gravixContract
+                .openMarketPosition(
+                    btcMarket,
+                    this.formDepositType,
+                    this.collateralNormalized,
+                    this.openPriceNormalized,
+                    this.leverageNormalized,
+                    this.slippageNormalized,
+                    assetData.price,
+                    assetData.timestamp,
+                    assetData.signature,
+                )
+                .catch(err => console.log(err))
+        } catch {
+            console.log('err submitMarketOrder')
+        }
     }
 
     get test() {
