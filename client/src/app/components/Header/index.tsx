@@ -1,3 +1,4 @@
+import React from 'react'
 import { Typography, Layout, Button, Row } from 'antd'
 import { observer } from 'mobx-react-lite'
 import { NavLink, generatePath } from 'react-router-dom'
