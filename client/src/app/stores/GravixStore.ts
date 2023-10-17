@@ -2,8 +2,6 @@ import { makeAutoObservable } from 'mobx'
 // import { createPXEClient, getSandboxAccountsWallets, AztecAddress, Wallet, AccountWalletWithPrivateKey } from '@aztec/aztec.js';
 // import {VaultContract} from '../../artifacts/Vault.js'
 
-// account - кошелек, полученный выше
-
 enum ETheme {
     DARK = 'dark',
     LIGHT = 'light',

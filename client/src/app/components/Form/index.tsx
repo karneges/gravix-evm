@@ -5,14 +5,14 @@ import styles from './index.module.scss'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '../../hooks/useStore.js'
 import { Tabs, InputNumber, Typography, Col, Card, Slider, Row, Button } from 'antd'
-import { FormStore, DepositType } from '../../stores/FormStore.js'
+import { DepositStore, DepositType } from '../../stores/DepositStore.js'
 import classNames from 'classnames'
 import { PriceStore } from '../../stores/PriceStore.js'
 
 const { Title, Paragraph } = Typography
 
 export const Form: React.FC = observer(() => {
-    const formStore = useStore(FormStore)
+    const depositStore = useStore(DepositStore)
     const price = useStore(PriceStore)
 
     const items = [
@@ -29,8 +29,8 @@ export const Form: React.FC = observer(() => {
     return (
         <Card type="inner" className={styles.form}>
             <Tabs
-                className={formStore.formDepositType === DepositType.LONG ? styles.longTab : styles.shortTab}
-                defaultActiveKey={formStore.formDepositType.toString()}
+                className={depositStore.formDepositType === DepositType.LONG ? styles.longTab : styles.shortTab}
+                defaultActiveKey={depositStore.formDepositType.toString()}
                 items={items.map(item => {
                     return {
                         label: (
@@ -41,31 +41,36 @@ export const Form: React.FC = observer(() => {
                         key: item.key,
                     }
                 })}
-                onChange={val => formStore.onTabChange(val)}
+                onChange={val => depositStore.onTabChange(val)}
             />
             <Col className={styles.collateral}>
                 <Title level={4}>Collateral</Title>
                 <InputNumber
                     className={styles.bigInput}
                     addonAfter="$"
-                    defaultValue={formStore.collateralVal}
-                    value={formStore.collateralVal}
-                    onChange={formStore.onCollateralChange}
+                    defaultValue={depositStore.collateralVal}
+                    value={depositStore.collateralVal}
+                    onChange={depositStore.onCollateralChange}
                 />
             </Col>
             <Col className={styles.block}>
                 <Title level={4}>Leverage</Title>
                 <Row justify="space-between" align="middle">
                     <Col span={12}>
-                        <Slider min={1} max={150} onChange={formStore.onLeverageChange} value={formStore.leverageVal} />
+                        <Slider
+                            min={1}
+                            max={150}
+                            onChange={depositStore.onLeverageChange}
+                            value={depositStore.leverageVal}
+                        />
                     </Col>
                     <Col>
                         <InputNumber
                             className={styles.leverInput}
                             min={1}
                             max={150}
-                            value={formStore.leverageVal}
-                            onChange={formStore.onLeverageChange}
+                            value={depositStore.leverageVal}
+                            onChange={depositStore.onLeverageChange}
                         />
                     </Col>
                 </Row>
@@ -76,8 +81,8 @@ export const Form: React.FC = observer(() => {
                     className={classNames(styles.bigInput, styles.disabledInput)}
                     addonAfter="$"
                     disabled
-                    defaultValue={formStore.positionSizeVal}
-                    value={formStore.positionSizeVal}
+                    defaultValue={depositStore.positionSizeVal}
+                    value={depositStore.positionSizeVal}
                 />
             </Col>
             <Col className={styles.block}>
@@ -86,8 +91,8 @@ export const Form: React.FC = observer(() => {
                     {price.price ? `${new BigNumber(price.price).toFixed(2)} $` : '\u200B'}
                 </Paragraph>
             </Col>
-            <Button style={{ width: '100%' }} type="primary" size="large" onClick={() => console.log('submit')}>
-                {formStore.formDepositType === DepositType.LONG ? 'Long' : 'Short'}
+            <Button style={{ width: '100%' }} type="primary" size="large" onClick={depositStore.submitMarketOrder}>
+                {depositStore.formDepositType === DepositType.LONG ? 'Long' : 'Short'}
             </Button>
         </Card>
     )
