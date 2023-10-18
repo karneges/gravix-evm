@@ -1,4 +1,5 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { notification } from 'antd'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import { GravixVault, StgUsdtToken, UsdtToken } from '../../config.js'
 import { Reactions } from '../utils/reactions.js'
@@ -8,6 +9,7 @@ import GravixAbi from '../../assets/abi/Gravix.json'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { Gravix } from '../../assets/misc/Gravix.js'
 import { BigNumber } from 'bignumber.js'
+import { decimalAmount } from '../utils/decimal-amount.js'
 
 export enum EarnAction {
     Deposit = 'deposit',
@@ -170,7 +172,7 @@ export class EarnStore {
         })
     }
 
-    submit(): void {
+    submit() {
         if (this.action === EarnAction.Deposit) {
             this.deposit().catch(console.error)
         } else if (this.action === EarnAction.Withdraw) {
@@ -179,11 +181,12 @@ export class EarnStore {
     }
 
     async deposit(): Promise<void> {
+        let success = false,
+            gravix: Gravix | undefined
+
         runInAction(() => {
             this.state.loading = true
         })
-
-        let gravix: Gravix | undefined
 
         try {
             if (!this.wallet.provider) {
@@ -201,34 +204,49 @@ export class EarnStore {
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
             gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
-
             const amount = normalizeAmount(this.amount, 6)
             await approveTokens(UsdtToken, this.wallet.address, GravixVault, amount, this.wallet.provider)
 
-            const success = new Promise((resolve, reject) => {
+            const successListener = new Promise<boolean>((resolve, reject) => {
                 gravix!
-                    .addListener('LiquidityPoolDeposit', address => {
-                        if (address === this.wallet.address) resolve(true)
+                    .addListener('LiquidityPoolDeposit', (address, usdt, stgUsdt) => {
+                        if (address === this.wallet.address) {
+                            const _usdt = decimalAmount(usdt, 6)
+                            const _stgUsdt = decimalAmount(stgUsdt, 6)
+                            notification.success({
+                                message: 'Liquidity deposit success',
+                                description: `${_usdt} USDT deposited, ${_stgUsdt} stgUSDT received`,
+                                placement: 'bottomRight',
+                            })
+                            resolve(true)
+                        }
                     })
                     .catch(reject)
             })
-
             await gravix.depositLiquidity(amount)
-            await success
+
+            success = await successListener
         } catch (e) {
             console.error(e)
+            notification.error({
+                message: 'Liquidity deposit failed',
+                placement: 'bottomRight',
+            })
         }
 
         gravix?.removeAllListeners().catch(console.error)
         this.syncBalance()
 
         runInAction(() => {
-            this.state.amount = ''
+            this.state.amount = success ? '' : this.amount
             this.state.loading = false
         })
     }
 
-    async withdraw(): Promise<void> {
+    async withdraw(): Promise<boolean> {
+        let success = false,
+            gravix: Gravix | undefined
+
         runInAction(() => {
             this.state.loading = true
         })
@@ -250,14 +268,44 @@ export class EarnStore {
             await approveTokens(StgUsdtToken, this.wallet.address, GravixVault, amount, this.wallet.provider)
             const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await browserProvider.getSigner()
-            const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+            gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+
+            const successListener = new Promise<boolean>((resolve, reject) => {
+                gravix!
+                    .addListener('LiquidityPoolWithdraw', (address, usdt, stgUsdt) => {
+                        if (address === this.wallet.address) {
+                            const _usdt = decimalAmount(usdt, 6)
+                            const _stgUsdt = decimalAmount(stgUsdt, 6)
+                            notification.success({
+                                message: 'Liquidity withdraw success',
+                                description: `${_stgUsdt} stgUSDT burned, ${_usdt} USDT received`,
+                                placement: 'bottomRight',
+                            })
+                            resolve(true)
+                        }
+                    })
+                    .catch(reject)
+            })
+
             await gravix.withdrawLiquidity(amount)
+
+            success = await successListener
         } catch (e) {
             console.error(e)
+            notification.error({
+                message: 'Liquidity withdraw failed',
+                placement: 'bottomRight',
+            })
         }
 
+        gravix?.removeAllListeners().catch(console.error)
+        this.syncBalance()
+
         runInAction(() => {
+            this.state.amount = success ? '' : this.amount
             this.state.loading = false
         })
+
+        return success
     }
 }
