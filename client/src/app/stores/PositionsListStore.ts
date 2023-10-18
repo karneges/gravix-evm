@@ -40,18 +40,24 @@ export class PositionsListStore {
         const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
         const signer = await browserProvider.getSigner()
         const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
-        this.evmWallet.address
 
         const arr: WithoutArr<IGravix.UserPositionInfoStructOutput>[] = await gravixContract.getUserPositions(
             this.evmWallet.address,
         )
 
-        console.log(arr[0], '111')
+        console.log(
+            arr.map(_ => _.position),
+            'arr.map(_ => _.position)',
+        )
         runInAction(() => {
-            this.state.marketOrders = arr.map(_ => _.position as WithoutArr<IGravix.PositionStructOutput>)
-            setTimeout(() => {
-                console.log(this.allUserPositions[0].toString(), 'this.state.marketOrders')
-            }, 500)
+            this.state.marketOrders = arr.map((_: any) => {
+                const newObj: any = {}
+                console.log(_[1]['#names'])
+                _[1]['#names'].forEach((name: any, index: number) => {
+                    newObj[name] = _[1][index]
+                })
+                return newObj
+            }) as WithoutArr<IGravix.PositionStructOutput>[]
         })
     }
 
