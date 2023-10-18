@@ -61,7 +61,7 @@ export const approveTokens = async (
 
         let count = 0
         let ready = false
-        while (!ready && count < 100) {
+        while (!ready && count < 25) {
             await delay(2000)
             const allowance = await ERC20Token.allowance(user, vault)
             const delta = new BigNumber(allowance.toString()).minus(amount)
