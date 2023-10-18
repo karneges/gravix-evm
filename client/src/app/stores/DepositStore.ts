@@ -1,4 +1,4 @@
-import { makeAutoObservable, reaction } from 'mobx'
+import { makeAutoObservable, reaction, runInAction } from 'mobx'
 import { BigNumber } from 'bignumber.js'
 import { Reactions } from '../utils/reactions.js'
 import { Contract, ethers, BaseContract } from 'ethers'
@@ -11,20 +11,27 @@ import { normalizeAmount } from '../utils/normalize-amount.js'
 import { normalizePercent } from '../utils/mix.js'
 import { GravixVault, UsdtToken } from '../../config.js'
 import { ERC20Abi } from '../../assets/abi/ERC20.js'
-import { approveTokens } from '../utils/gravix.js'
+import { approveTokens, getTokenBalance } from '../utils/gravix.js'
 
 export enum DepositType {
     LONG = '0',
     SHORT = '1',
 }
 
+type State = {
+    usdtBalance?: string
+    loading?: boolean
+}
+
 export class DepositStore {
     protected reactions = new Reactions()
+
+    protected state: State = {}
 
     isDarkMode = false
     formDepositType = DepositType.LONG
     leverageVal = 1
-    collateralVal = 1
+    collateralVal = '1'
     positionSizeVal = '1'
     slippage = '1'
 
@@ -41,7 +48,10 @@ export class DepositStore {
             },
         )
 
-        this.reactions.create(reaction(() => [this.leverageVal, this.collateralVal], this.onSizeChange))
+        this.reactions.create(
+            reaction(() => [this.leverageVal, this.collateralVal], this.onSizeChange),
+            reaction(() => this.evmWallet.address, this.syncUsdtBalance, { fireImmediately: true }),
+        )
     }
 
     onTabChange = (key: string) => {
@@ -49,8 +59,8 @@ export class DepositStore {
         this.formDepositType = val
     }
 
-    onCollateralChange = (val: number | null) => {
-        this.collateralVal = val ? val : 0.1
+    onCollateralChange = (val: string) => {
+        this.collateralVal = val
     }
 
     onSizeChange = () => {
@@ -152,6 +162,22 @@ export class DepositStore {
         }
     }
 
+    async syncUsdtBalance(): Promise<void> {
+        let usdtBalance: string
+
+        try {
+            if (this.evmWallet.provider && this.evmWallet.address) {
+                usdtBalance = await getTokenBalance(UsdtToken, this.evmWallet.address, this.evmWallet.provider)
+            }
+        } catch (e) {
+            console.error(e)
+        }
+
+        runInAction(() => {
+            this.state.usdtBalance = usdtBalance
+        })
+    }
+
     get test() {
         return 'test'
     }
@@ -174,5 +200,21 @@ export class DepositStore {
 
     public get slippageNormalized(): string | undefined {
         return this.slippage ? normalizePercent(this.slippage) : undefined
+    }
+
+    get loading(): boolean {
+        return !!this.state.loading
+    }
+
+    get usdtBalance(): string | undefined {
+        return this.state.usdtBalance
+    }
+
+    get amountIsValid(): boolean {
+        if (this.state.usdtBalance && this.collateralNormalized) {
+            return new BigNumber(this.state.usdtBalance).gte(this.collateralNormalized)
+        }
+
+        return false
     }
 }
