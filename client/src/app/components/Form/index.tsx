@@ -38,9 +38,12 @@ export const Form: React.FC = observer(() => {
 
     return (
         <Card type="inner" className={styles.form}>
-            <form onSubmit={onSubmitFn(deposit.submit)}>
+            <form onSubmit={onSubmitFn(deposit.submit)} className={styles.inner}>
                 <Tabs
-                    className={deposit.depositType === DepositType.Long ? styles.longTab : styles.shortTab}
+                    className={classNames(
+                        styles.tabs,
+                        deposit.depositType === DepositType.Long ? styles.longTab : styles.shortTab,
+                    )}
                     defaultActiveKey={deposit.depositType.toString()}
                     items={items.map(item => {
                         return {
@@ -54,24 +57,25 @@ export const Form: React.FC = observer(() => {
                     })}
                     onChange={onChangeTab}
                 />
-                <Col className={styles.collateral}>
-                    <Title level={4}>Collateral</Title>
+
+                <Col>
+                    <Title level={5}>Collateral</Title>
                     <Input
-                        className={classNames(styles.bigInput, styles.amount)}
+                        className={styles.bigInput}
                         addonAfter="USDT"
                         value={deposit.collateral}
                         onChange={onChangeFn(deposit.setCollateral)}
                         disabled={deposit.loading}
                     />
-                    <Typography.Text>
+                    <Typography.Text className={styles.balance}>
                         Balance: {deposit.usdtBalance ? `${decimalAmount(deposit.usdtBalance, 6)} USDT` : ''}
                     </Typography.Text>
                 </Col>
 
-                <Col className={styles.collateral}>
-                    <Title level={4}>Position</Title>
+                <Col>
+                    <Title level={5}>Position</Title>
                     <Input
-                        className={classNames(styles.bigInput, styles.amount)}
+                        className={styles.bigInput}
                         addonAfter="USDT"
                         value={deposit.position}
                         onChange={onChangeFn(deposit.setPosition)}
@@ -79,30 +83,49 @@ export const Form: React.FC = observer(() => {
                     />
                 </Col>
 
-                <Col className={styles.block}>
-                    <Title level={4}>Leverage</Title>
-
+                <Col>
                     <div className={styles.leverage}>
-                        <Slider
-                            className={styles.slider}
-                            min={1}
-                            max={150}
-                            onChange={onChangeSlider}
-                            value={Number(deposit.leverage)}
-                            disabled={deposit.loading}
-                        />
-
+                        <Title className={styles.title} level={5}>
+                            Leverage
+                        </Title>
                         <Input
-                            className={styles.leverInput}
+                            prefix="x"
+                            className={styles.smallInput}
                             value={deposit.leverage}
                             onChange={onChangeFn(deposit.setLeverage)}
                             disabled={deposit.loading}
                         />
                     </div>
+
+                    <Slider
+                        className={styles.slider}
+                        min={1}
+                        max={150}
+                        onChange={onChangeSlider}
+                        value={Number(deposit.leverage)}
+                        disabled={deposit.loading}
+                    />
                 </Col>
-                <Col className={styles.block}>
-                    <Title level={4}>Price</Title>
-                    <Paragraph className={styles.price}>
+
+                <Col className={styles.slippage}>
+                    <Title level={5} className={styles.title}>
+                        Slippage
+                    </Title>
+                    <Input
+                        prefix="%"
+                        className={styles.smallInput}
+                        value={deposit.slippage}
+                        onChange={onChangeFn(deposit.setSlippage)}
+                        disabled={deposit.loading}
+                    />
+                </Col>
+
+                <Col className={styles.price}>
+                    <Title className={styles.title} level={5}>
+                        Open Price
+                    </Title>
+
+                    <Paragraph className={styles.value}>
                         {price.price ? `$${new BigNumber(price.price).toFixed(2)}` : '\u200B'}
                     </Paragraph>
                 </Col>

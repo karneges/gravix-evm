@@ -83,6 +83,10 @@ export class DepositStore {
         this.calcPosition()
     }
 
+    setSlippage(value: string): void {
+        this.state.slippage = value
+    }
+
     calcCollateral(): void {
         this.state.collateral =
             this.position && this.leverage && this.market.openFeeRate
@@ -97,7 +101,7 @@ export class DepositStore {
                 : undefined
     }
 
-    protected calcPosition(): void {
+    calcPosition(): void {
         this.state.position =
             this.collateral && this.openFee && this.leverage
                 ? new BigNumber(this.collateral).minus(this.openFee).times(this.leverage).decimalPlaces(6).toString()
@@ -245,6 +249,10 @@ export class DepositStore {
 
     get depositType(): DepositType {
         return this.state.depositType
+    }
+
+    get slippage(): string | undefined {
+        return this.state.slippage
     }
 
     get leverage(): string {
