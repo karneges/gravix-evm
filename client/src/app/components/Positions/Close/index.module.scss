@@ -7,12 +7,25 @@
     min-width: 36px;
     color: rgba(255, 255, 255, 0.48);
 
+}
+
+.darkBtn {
     svg {
         color: rgba(255, 255, 255, 0.48);
     }
 
     &:hover svg {
         color: rgb(255, 255, 255);
+    }
+}
+
+.lightBtn {
+    svg {
+        color: rgba(0, 0, 0, 0.48);
+    }
+
+    &:hover svg {
+        color: rgb(0, 0, 0);
     }
 }
 
