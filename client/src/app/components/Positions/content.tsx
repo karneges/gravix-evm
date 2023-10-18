@@ -23,7 +23,7 @@ export const PositionsContent: React.FC = observer(() => {
                 render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
                     <div className={styles.flexCol}>
                         {[1].map(() => {
-                            console.log(_, 'test')
+                            console.log(item, 'test')
                             return 1
                         })}
                         <span>
@@ -59,7 +59,7 @@ export const PositionsContent: React.FC = observer(() => {
                 columns={columns}
                 loading={false}
                 scroll={{ x: true }}
-                rowKey={record => record.createdAt}
+                rowKey={record => record.toString()}
             />
         </div>
     )
