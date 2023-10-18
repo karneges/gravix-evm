@@ -41,27 +41,49 @@ export class PositionsListStore {
         const signer = await browserProvider.getSigner()
         const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
 
-        const arr: WithoutArr<IGravix.UserPositionInfoStructOutput>[] = await gravixContract.getUserPositions(
-            this.evmWallet.address,
-        )
+        const position = await gravixContract.getUserPositions(this.evmWallet.address)
 
-        console.log(
-            arr.map(_ => _.position),
-            'arr.map(_ => _.position)',
-        )
         runInAction(() => {
-            this.state.marketOrders = arr.map((_: any) => {
-                const newObj: any = {}
-                console.log(_[1]['#names'])
-                _[1]['#names'].forEach((name: any, index: number) => {
-                    newObj[name] = _[1][index]
-                })
-                return newObj
-            }) as WithoutArr<IGravix.PositionStructOutput>[]
+            this.state.marketOrders = position.map(mapPosition)
         })
+
+        // const arr: WithoutArr<IGravix.UserPositionInfoStructOutput>[] = await gravixContract.getUserPositions(
+        //     this.evmWallet.address,
+        // )
+
+        // console.log(
+        //     arr.map(_ => _.position),
+        //     'arr.map(_ => _.position)',
+        // )
+        // runInAction(() => {
+        //     this.state.marketOrders = arr.map((_: any) => {
+        //         const newObj: any = {}
+        //         console.log(_[1]['#names'])
+        //         _[1]['#names'].forEach((name: any, index: number) => {
+        //             newObj[name] = _[1][index]
+        //         })
+        //         return newObj
+        //     }) as WithoutArr<IGravix.PositionStructOutput>[]
+        // })
     }
 
     public get allUserPositions(): WithoutArr<IGravix.PositionStructOutput>[] {
         return this.state.marketOrders ?? []
     }
 }
+
+const mapPosition = (item: IGravix.UserPositionInfoStructOutput): WithoutArr<IGravix.PositionStructOutput> => ({
+    accUSDFundingPerShare: item[1].accUSDFundingPerShare,
+    baseSpreadRate: item[1].baseSpreadRate,
+    borrowBaseRatePerHour: item[1].borrowBaseRatePerHour,
+    closeFeeRate: item[1].closeFeeRate,
+    createdAt: item[1].createdAt,
+    initialCollateral: item[1].initialCollateral,
+    leverage: item[1].leverage,
+    liquidationThresholdRate: item[1].liquidationThresholdRate,
+    marketIdx: item[1].marketIdx,
+    markPrice: item[1].markPrice,
+    openFee: item[1].openFee,
+    openPrice: item[1].openPrice,
+    positionType: item[1].positionType,
+})
