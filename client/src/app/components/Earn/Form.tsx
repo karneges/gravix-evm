@@ -26,6 +26,10 @@ export const EarnForm: React.FC = observer(() => {
     return (
         <div className={styles.earn}>
             <Card className={styles.form}>
+                Pool balance: {form.poolBalance ? `$${decimalAmount(form.poolBalance, 6)}` : ''}
+            </Card>
+
+            <Card className={styles.form} bodyStyle={{ paddingTop: 0 }}>
                 <Tabs
                     activeKey={form.action}
                     onChange={onChangeTab}
@@ -61,7 +65,7 @@ export const EarnForm: React.FC = observer(() => {
                         ) : null}
                     </div>
 
-                    <Button htmlType="submit" type="primary" block disabled={form.loading}>
+                    <Button htmlType="submit" type="primary" block disabled={form.loading || !form.amountIsValid}>
                         {form.action === EarnAction.Deposit ? 'Deposit' : 'Withdraw'}
                     </Button>
                 </form>
