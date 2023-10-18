@@ -6,6 +6,9 @@ import GravixAbi from '../../assets/abi/Gravix.json'
 import { Gravix } from '../../assets/misc/index.js'
 import { Reactions } from '../utils/reactions.js'
 import { IGravix } from '../../assets/misc/Gravix.js'
+import { decimalAmount } from '../utils/decimal-amount.js'
+import { GravixStore } from './GravixStore.js'
+import { BigNumber } from 'bignumber.js'
 
 export type WithoutArr<T> = {
     [Key in {
@@ -21,7 +24,10 @@ export class PositionsListStore {
     protected reactions = new Reactions()
     protected state: State = {}
 
-    constructor(protected evmWallet: EvmWalletStore) {
+    constructor(
+        protected evmWallet: EvmWalletStore,
+        protected gravix: GravixStore,
+    ) {
         makeAutoObservable(
             this,
             {},
@@ -46,25 +52,20 @@ export class PositionsListStore {
         runInAction(() => {
             this.state.marketOrders = position.map(mapPosition)
         })
+    }
 
-        // const arr: WithoutArr<IGravix.UserPositionInfoStructOutput>[] = await gravixContract.getUserPositions(
-        //     this.evmWallet.address,
-        // )
+    async closePos() {
+        console.log('closePos')
+        await new Promise(res => res(1))
+    }
 
-        // console.log(
-        //     arr.map(_ => _.position),
-        //     'arr.map(_ => _.position)',
-        // )
-        // runInAction(() => {
-        //     this.state.marketOrders = arr.map((_: any) => {
-        //         const newObj: any = {}
-        //         console.log(_[1]['#names'])
-        //         _[1]['#names'].forEach((name: any, index: number) => {
-        //             newObj[name] = _[1][index]
-        //         })
-        //         return newObj
-        //     }) as WithoutArr<IGravix.PositionStructOutput>[]
-        // })
+    countSize(collateral: string, leverage: string) {
+        const normLeverage = decimalAmount(leverage, this.gravix.baseNumber)
+        console.log(normLeverage, 'normLeverage')
+        return new BigNumber(collateral)
+            .times(normLeverage)
+            .div(10 ** 6)
+            .toFixed(2)
     }
 
     public get allUserPositions(): WithoutArr<IGravix.PositionStructOutput>[] {
