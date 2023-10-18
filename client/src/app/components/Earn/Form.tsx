@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import { Tabs, Card, Input, Typography, Button } from 'antd'
 
 import styles from './index.module.scss'
@@ -65,7 +65,13 @@ export const EarnForm: React.FC = observer(() => {
                         ) : null}
                     </div>
 
-                    <Button htmlType="submit" type="primary" block disabled={form.loading || !form.amountIsValid}>
+                    <Button
+                        htmlType="submit"
+                        type="primary"
+                        block
+                        disabled={form.loading || !form.amountIsValid}
+                        loading={form.loading}
+                    >
                         {form.action === EarnAction.Deposit ? 'Deposit' : 'Withdraw'}
                     </Button>
                 </form>
