@@ -21,7 +21,7 @@ export const Header = observer(() => {
         <Layout.Header style={headerStyle}>
             <Row style={{ height: '100%' }} justify="space-between" align="middle">
                 <div className={styles.menu}>
-                    <Typography.Text>AztecGravix</Typography.Text>
+                    <Typography.Text>Gravix</Typography.Text>
                     <NavLink to={generatePath(routes.main)}>Trade</NavLink>
                     <NavLink to={generatePath(routes.earn)}>Earn</NavLink>
                 </div>

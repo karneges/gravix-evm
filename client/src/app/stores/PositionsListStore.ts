@@ -16,8 +16,11 @@ export type WithoutArr<T> = {
     }[keyof T]]: T[Key]
 }
 
+export type TGravixPosition = WithoutArr<IGravix.PositionStructOutput> & { index: string }
+
 type State = {
-    marketOrders?: WithoutArr<IGravix.PositionStructOutput>[]
+    marketOrders?: WithoutArr<TGravixPosition>[]
+    marketOrdersPosView?: WithoutArr<IGravix.PositionViewStructOutput>[]
 }
 
 export class PositionsListStore {
@@ -40,23 +43,84 @@ export class PositionsListStore {
     }
 
     async initApp() {
-        console.log(this.evmWallet.provider, this.evmWallet.address, '2222')
         if (!this.evmWallet.provider || !this.evmWallet.address) return
-        console.log('333')
         const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
         const signer = await browserProvider.getSigner()
         const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
 
         const position = await gravixContract.getUserPositions(this.evmWallet.address)
 
+        const filteredPositions = position.filter(_ => (_[1].createdAt.toString() !== '0' ? true : false))
+        console.log(position, 'initApp')
+        const assetData = await (
+            await fetch('https://api-cc35d.ondigitalocean.app/signature', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    marketIdx: 0,
+                    chainId: 59140,
+                }),
+            })
+        ).json()
+        const address = this.evmWallet.address
+
+        const positionsView = await Promise.all(
+            filteredPositions.map(async _ => {
+                const position = await gravixContract.getPositionView({
+                    positionKey: _[0],
+                    user: address,
+                    assetPrice: assetData.price,
+                    funding: {
+                        accLongUSDFundingPerShare: 0,
+                        accShortUSDFundingPerShare: 0,
+                    },
+                })
+                console.log(position, 'positionsView')
+
+                return position
+            }),
+        )
+
         runInAction(() => {
-            this.state.marketOrders = position.map(mapPosition)
+            this.state.marketOrders = filteredPositions.map(_ => mapPosition(_, _[0].toString()))
+            // positionKey: BigNumberish;
+            // user: AddressLike;
+            // assetPrice: BigNumberish;
+            // funding: IGravix.FundingStruct;
+            this.state.marketOrdersPosView = positionsView.map(mapPositionView)
         })
     }
 
-    async closePos() {
-        console.log('closePos')
-        await new Promise(res => res(1))
+    async closePos(key: string) {
+        if (!this.evmWallet.provider || !this.evmWallet.address) return
+        console.log('333')
+
+        try {
+            const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
+            const signer = await browserProvider.getSigner()
+            const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+
+            const assetData = await (
+                await fetch('https://api-cc35d.ondigitalocean.app/signature', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        marketIdx: 0,
+                        chainId: 59140,
+                    }),
+                })
+            ).json()
+
+            await gravixContract.closeMarketPosition(0, key, assetData.price, assetData.timestamp, assetData.signature)
+
+            console.log('closePos')
+        } catch (e) {
+            console.log(e)
+        }
     }
 
     countSize(collateral: string, leverage: string) {
@@ -68,23 +132,43 @@ export class PositionsListStore {
             .toFixed(2)
     }
 
-    public get allUserPositions(): WithoutArr<IGravix.PositionStructOutput>[] {
+    public get allUserViewPositions(): WithoutArr<IGravix.PositionViewStructOutput>[] {
+        return this.state.marketOrdersPosView ?? []
+    }
+
+    public get allUserPositions(): WithoutArr<TGravixPosition>[] {
         return this.state.marketOrders ?? []
     }
 }
 
-const mapPosition = (item: IGravix.UserPositionInfoStructOutput): WithoutArr<IGravix.PositionStructOutput> => ({
-    accUSDFundingPerShare: item[1].accUSDFundingPerShare,
-    baseSpreadRate: item[1].baseSpreadRate,
-    borrowBaseRatePerHour: item[1].borrowBaseRatePerHour,
-    closeFeeRate: item[1].closeFeeRate,
-    createdAt: item[1].createdAt,
-    initialCollateral: item[1].initialCollateral,
-    leverage: item[1].leverage,
-    liquidationThresholdRate: item[1].liquidationThresholdRate,
-    marketIdx: item[1].marketIdx,
-    markPrice: item[1].markPrice,
-    openFee: item[1].openFee,
-    openPrice: item[1].openPrice,
-    positionType: item[1].positionType,
+const mapPositionView = (item: IGravix.PositionViewStructOutput): WithoutArr<IGravix.PositionViewStructOutput> => ({
+    position: item.position,
+    positionSizeUSD: item.positionSizeUSD,
+    closePrice: item.closePrice,
+    borrowFee: item.borrowFee,
+    fundingFee: item.fundingFee,
+    closeFee: item.closeFee,
+    liquidationPrice: item.liquidationPrice,
+    pnl: item.pnl,
+    liquidate: item.liquidate,
+    viewTime: item.viewTime,
 })
+
+const mapPosition = (item: IGravix.UserPositionInfoStructOutput, index: string): TGravixPosition => {
+    return {
+        index,
+        accUSDFundingPerShare: item[1].accUSDFundingPerShare,
+        baseSpreadRate: item[1].baseSpreadRate,
+        borrowBaseRatePerHour: item[1].borrowBaseRatePerHour,
+        closeFeeRate: item[1].closeFeeRate,
+        createdAt: item[1].createdAt,
+        initialCollateral: item[1].initialCollateral,
+        leverage: item[1].leverage,
+        liquidationThresholdRate: item[1].liquidationThresholdRate,
+        marketIdx: item[1].marketIdx,
+        markPrice: item[1].markPrice,
+        openFee: item[1].openFee,
+        openPrice: item[1].openPrice,
+        positionType: item[1].positionType,
+    }
+}
