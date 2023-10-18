@@ -97,3 +97,14 @@
     display: block;
     margin: 4px 0 0;
 }
+
+.stats {
+    margin: 16px 0 0;
+    padding: 0 16px;
+
+    .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}

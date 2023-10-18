@@ -1,17 +1,26 @@
-import { makeAutoObservable } from 'mobx'
-// import { createPXEClient, getSandboxAccountsWallets, AztecAddress, Wallet, AccountWalletWithPrivateKey } from '@aztec/aztec.js';
-// import {VaultContract} from '../../artifacts/Vault.js'
+import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { EvmWalletStore } from './EvmWalletStore.js'
+import { ethers } from 'ethers'
+import { GravixVault } from '../../config.js'
+import GravixAbi from '../../assets/abi/Gravix.json'
+import { Gravix } from '../../assets/misc/index.js'
+import { Reactions } from '../utils/reactions.js'
 
 enum ETheme {
     DARK = 'dark',
     LIGHT = 'light',
 }
 
-// const PXE_URL = "http://167.99.212.95:8080"
-// const VAULT_ADDRESS = '0x1180f988c7d36ac2cac05ebba83b8fa224074cff1cba541528db143083b03f20';
+type State = {
+    maxPnlRate?: bigint
+}
 
 export class GravixStore {
-    constructor() {
+    protected state: State = {}
+
+    protected reactions = new Reactions()
+
+    constructor(protected wallet: EvmWalletStore) {
         makeAutoObservable(
             this,
             {},
@@ -20,7 +29,7 @@ export class GravixStore {
             },
         )
 
-        this.initApp()
+        this.initTheme()
     }
 
     public readonly priceDecimals = 8
@@ -28,32 +37,19 @@ export class GravixStore {
 
     isDarkMode = false
     gravixAccounts: `0x${string}`[] = []
-    // gravixAccountsCompleted: AccountWalletWithPrivateKey[] = []
 
     get test() {
         return 'test'
     }
 
-    initApp() {
-        const themeType = localStorage.getItem('theme-type')
-        if (themeType === ETheme.DARK) this.toggleTheme(true)
-
-        // this.initGravix().catch(() => console.log("initGravix error"))
+    init() {
+        this.reactions.create(reaction(() => !!this.wallet.provider, this.syncDetails, { fireImmediately: true }))
     }
 
-    // async initGravix() {
-    //     const pxe = createPXEClient(PXE_URL); // адрес нашей ноды
-    //     const { chainId } = await pxe.getNodeInfo();
-    //     console.log(`Connected to chain ${chainId}`);
-    //     const gravixAccsFull = await getSandboxAccountsWallets(pxe);
-    //     const gravixAccs = gravixAccsFull.map(i => i.getAddress().toString());
-
-    //     console.log(await this.getVault(gravixAccsFull[0]), 'VAULT')
-    //     runInAction(() => {
-    //         this.gravixAccounts = gravixAccs
-    //         this.gravixAccountsCompleted = gravixAccsFull
-    //     })
-    // }
+    initTheme() {
+        const themeType = localStorage.getItem('theme-type')
+        if (themeType === ETheme.DARK) this.toggleTheme(true)
+    }
 
     toggleTheme(isDark?: boolean) {
         if (isDark) {
@@ -67,11 +63,30 @@ export class GravixStore {
             : localStorage.setItem('theme-type', ETheme.LIGHT)
     }
 
-    // async getVault(account: Wallet) {
-    //     return await VaultContract.at(AztecAddress.fromString(VAULT_ADDRESS), account);
-    // }
+    async syncDetails(): Promise<void> {
+        if (!this.wallet.provider) {
+            return
+        }
 
-    public get getThemeMode(): boolean {
+        try {
+            const provider = new ethers.BrowserProvider(this.wallet.provider)
+            const signer = await provider.getSigner()
+            const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+            const details = await gravix.getDetails()
+
+            runInAction(() => {
+                this.state.maxPnlRate = details.maxPnlRate
+            })
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    get getThemeMode(): boolean {
         return this.isDarkMode ?? false
+    }
+
+    get maxPnlRate(): string | undefined {
+        return this.state.maxPnlRate?.toString()
     }
 }

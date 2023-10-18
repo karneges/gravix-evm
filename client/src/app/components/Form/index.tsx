@@ -10,12 +10,17 @@ import classNames from 'classnames'
 import { PriceStore } from '../../stores/PriceStore.js'
 import { decimalAmount } from '../../utils/decimal-amount.js'
 import { onChangeFn, onSubmitFn } from '../../utils/input.js'
+import { MarketStore } from '../../stores/MarketStore.js'
+import { decimalPercent } from '../../utils/gravix.js'
+import { GravixStore } from '../../stores/GravixStore.js'
 
 const { Title, Paragraph } = Typography
 
 export const Form: React.FC = observer(() => {
     const deposit = useStore(DepositStore)
     const price = useStore(PriceStore)
+    const market = useStore(MarketStore)
+    const gravix = useStore(GravixStore)
 
     const items = [
         {
@@ -37,109 +42,140 @@ export const Form: React.FC = observer(() => {
     }
 
     return (
-        <Card type="inner" className={styles.form}>
-            <form onSubmit={onSubmitFn(deposit.submit)} className={styles.inner}>
-                <Tabs
-                    className={classNames(
-                        styles.tabs,
-                        deposit.depositType === DepositType.Long ? styles.longTab : styles.shortTab,
-                    )}
-                    defaultActiveKey={deposit.depositType.toString()}
-                    items={items.map(item => {
-                        return {
-                            label: (
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                    <span style={{ marginRight: '4px' }}>{item?.label}</span>
-                                </div>
-                            ),
-                            key: item.key,
-                        }
-                    })}
-                    onChange={onChangeTab}
-                />
-
-                <Col>
-                    <Title level={5}>Collateral</Title>
-                    <Input
-                        className={styles.bigInput}
-                        addonAfter="USDT"
-                        value={deposit.collateral}
-                        onChange={onChangeFn(deposit.setCollateral)}
-                        disabled={deposit.loading}
+        <div className={styles.form}>
+            <Card type="inner">
+                <form onSubmit={onSubmitFn(deposit.submit)} className={styles.inner}>
+                    <Tabs
+                        className={classNames(
+                            styles.tabs,
+                            deposit.depositType === DepositType.Long ? styles.longTab : styles.shortTab,
+                        )}
+                        defaultActiveKey={deposit.depositType.toString()}
+                        items={items.map(item => {
+                            return {
+                                label: (
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <span style={{ marginRight: '4px' }}>{item?.label.toUpperCase()}</span>
+                                    </div>
+                                ),
+                                key: item.key,
+                            }
+                        })}
+                        onChange={onChangeTab}
                     />
-                    <Typography.Text className={styles.balance}>
-                        Balance: {deposit.usdtBalance ? `${decimalAmount(deposit.usdtBalance, 6)} USDT` : ''}
-                    </Typography.Text>
-                </Col>
 
-                <Col>
-                    <Title level={5}>Position</Title>
-                    <Input
-                        className={styles.bigInput}
-                        addonAfter="USDT"
-                        value={deposit.position}
-                        onChange={onChangeFn(deposit.setPosition)}
-                        disabled={deposit.loading}
-                    />
-                </Col>
-
-                <Col>
-                    <div className={styles.leverage}>
-                        <Title className={styles.title} level={5}>
-                            Leverage
-                        </Title>
+                    <Col>
+                        <Title level={5}>Collateral</Title>
                         <Input
-                            prefix="x"
-                            className={styles.smallInput}
-                            value={deposit.leverage}
-                            onChange={onChangeFn(deposit.setLeverage)}
+                            className={styles.bigInput}
+                            addonAfter="USDT"
+                            value={deposit.collateral}
+                            onChange={onChangeFn(deposit.setCollateral)}
                             disabled={deposit.loading}
                         />
-                    </div>
+                        <Typography.Text className={styles.balance}>
+                            Balance: {deposit.usdtBalance ? `${decimalAmount(deposit.usdtBalance, 6)} USDT` : ''}
+                        </Typography.Text>
+                    </Col>
 
-                    <Slider
-                        className={styles.slider}
-                        min={1}
-                        max={150}
-                        onChange={onChangeSlider}
-                        value={Number(deposit.leverage)}
-                        disabled={deposit.loading}
-                    />
-                </Col>
+                    <Col>
+                        <Title level={5}>Position</Title>
+                        <Input
+                            className={styles.bigInput}
+                            addonAfter="USDT"
+                            value={deposit.position}
+                            onChange={onChangeFn(deposit.setPosition)}
+                            disabled={deposit.loading}
+                        />
+                    </Col>
 
-                <Col className={styles.slippage}>
-                    <Title level={5} className={styles.title}>
-                        Slippage
-                    </Title>
-                    <Input
-                        prefix="%"
-                        className={styles.smallInput}
-                        value={deposit.slippage}
-                        onChange={onChangeFn(deposit.setSlippage)}
-                        disabled={deposit.loading}
-                    />
-                </Col>
+                    <Col>
+                        <div className={styles.leverage}>
+                            <Title className={styles.title} level={5}>
+                                Leverage
+                            </Title>
+                            <Input
+                                prefix="x"
+                                className={styles.smallInput}
+                                value={deposit.leverage}
+                                onChange={onChangeFn(deposit.setLeverage)}
+                                disabled={deposit.loading}
+                            />
+                        </div>
 
-                <Col className={styles.price}>
-                    <Title className={styles.title} level={5}>
-                        Open Price
-                    </Title>
+                        <Slider
+                            className={styles.slider}
+                            min={1}
+                            max={150}
+                            onChange={onChangeSlider}
+                            value={Number(deposit.leverage)}
+                            disabled={deposit.loading}
+                        />
+                    </Col>
 
-                    <Paragraph className={styles.value}>
-                        {price.price ? `$${new BigNumber(price.price).toFixed(2)}` : '\u200B'}
-                    </Paragraph>
-                </Col>
-                <Button
-                    htmlType="submit"
-                    style={{ width: '100%' }}
-                    type="primary"
-                    size="large"
-                    disabled={deposit.loading || !deposit.amountIsValid}
-                    loading={deposit.loading}
-                >
-                    {deposit.depositType === DepositType.Long ? 'Long' : 'Short'}
-                </Button>
-            </form>
-        </Card>
+                    <Col className={styles.slippage}>
+                        <Title level={5} className={styles.title}>
+                            Slippage
+                        </Title>
+                        <Input
+                            prefix="%"
+                            className={styles.smallInput}
+                            value={deposit.slippage}
+                            onChange={onChangeFn(deposit.setSlippage)}
+                            disabled={deposit.loading}
+                        />
+                    </Col>
+
+                    <Col className={styles.price}>
+                        <Title className={styles.title} level={5}>
+                            Open Price
+                        </Title>
+
+                        <Paragraph className={styles.value}>
+                            {price.price ? `$${new BigNumber(price.price).toFixed(2)}` : '\u200B'}
+                        </Paragraph>
+                    </Col>
+                    <Button
+                        htmlType="submit"
+                        style={{ width: '100%' }}
+                        type="primary"
+                        size="large"
+                        disabled={deposit.loading || !deposit.amountIsValid}
+                        loading={deposit.loading}
+                    >
+                        {deposit.depositType === DepositType.Long ? 'Long' : 'Short'}
+                    </Button>
+                </form>
+            </Card>
+
+            <div className={styles.stats}>
+                <div className={styles.row}>
+                    <Typography.Text>Position size</Typography.Text>
+                    <Typography.Text>{deposit.position ? `$${deposit.position}` : ''}</Typography.Text>
+                </div>
+                <div className={styles.row}>
+                    <Typography.Text>Fees</Typography.Text>
+                    <Typography.Text>{deposit.openFee ? `$${deposit.openFee}` : ''}</Typography.Text>
+                </div>
+                <div className={styles.row}>
+                    <Typography.Text>Liq. price</Typography.Text>
+                    <Typography.Text>
+                        {deposit.liquidationPrice ? `$${new BigNumber(deposit.liquidationPrice).toFixed(2)}` : ''}
+                    </Typography.Text>
+                </div>
+                <div className={styles.row}>
+                    <Typography.Text>Borrow fee</Typography.Text>
+                    <Typography.Text>
+                        {market.borrowBaseRatePerHour ? `${market.borrowBaseRatePerHour}%/h` : ''}
+                    </Typography.Text>
+                </div>
+                <div className={styles.row}>
+                    <Typography.Text>Max pnl</Typography.Text>
+                    <Typography.Text>
+                        {gravix.maxPnlRate ? `${decimalPercent(gravix.maxPnlRate)}%` : ''}
+                    </Typography.Text>
+                </div>
+            </div>
+        </div>
     )
 })

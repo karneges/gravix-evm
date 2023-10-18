@@ -10,15 +10,16 @@ import { PriceStore } from '../../stores/PriceStore.js'
 import { EvmWalletStore } from '../../stores/EvmWalletStore.js'
 import { routes } from '../../routes/index.js'
 import { MarketsStore } from '../../stores/MarketsStore.js'
+import { MarketStatsStore } from '../../stores/MarketStatsStore.js'
 
 export const Root: React.FC = () => {
-    const GravixProvider = useProvider(GravixStore)
     const EvmWalletProvider = useProvider(EvmWalletStore)
 
     return (
         <EvmWalletProvider>
             {evmWallet => {
                 const MarketsProvider = useProvider(MarketsStore, evmWallet)
+                const GravixProvider = useProvider(GravixStore, evmWallet)
                 return (
                     <MarketsProvider>
                         {markets => {
@@ -32,6 +33,11 @@ export const Root: React.FC = () => {
                                                 return (
                                                     <PriceProvider>
                                                         {price => {
+                                                            const MarketStatsProvider = useProvider(
+                                                                MarketStatsStore,
+                                                                price,
+                                                                market,
+                                                            )
                                                             const DepositProvider = useProvider(
                                                                 DepositStore,
                                                                 evmWallet,
@@ -41,15 +47,17 @@ export const Root: React.FC = () => {
                                                             )
 
                                                             return (
-                                                                <DepositProvider>
-                                                                    <Router>
-                                                                        <Switch>
-                                                                            <Route path={routes.main}>
-                                                                                <RootContent />
-                                                                            </Route>
-                                                                        </Switch>
-                                                                    </Router>
-                                                                </DepositProvider>
+                                                                <MarketStatsProvider>
+                                                                    <DepositProvider>
+                                                                        <Router>
+                                                                            <Switch>
+                                                                                <Route path={routes.main}>
+                                                                                    <RootContent />
+                                                                                </Route>
+                                                                            </Switch>
+                                                                        </Router>
+                                                                    </DepositProvider>
+                                                                </MarketStatsProvider>
                                                             )
                                                         }}
                                                     </PriceProvider>

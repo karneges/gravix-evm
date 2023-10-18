@@ -182,7 +182,7 @@ export class DepositStore {
                             const type = data.positionType === '0' ? 'Long' : 'Short'
                             notification.success({
                                 message: 'Market order executed',
-                                description: `${mapIdxToTicker(data.marketIdx.toString())} ${type} open at ${price}`,
+                                description: `${mapIdxToTicker(data.marketIdx.toString())} ${type} open at $${price}`,
                                 placement: 'bottomRight',
                             })
                             resolve(true)
@@ -271,6 +271,38 @@ export class DepositStore {
                   .dividedBy(100)
                   .toFixed()
             : undefined
+    }
+
+    public get liquidationPrice(): string | undefined {
+        if (
+            this.collateral &&
+            this.openFee &&
+            this.openPrice &&
+            this.leverage &&
+            this.market.baseSpreadRate &&
+            new BigNumber(this.collateral).gt(0)
+        ) {
+            const isLong = this.depositType === DepositType.Long
+
+            const collateral = new BigNumber(this.collateral).minus(this.openFee)
+
+            const liqPriceDistance = new BigNumber(this.openPrice)
+                .times(collateral)
+                .times(0.9)
+                .dividedBy(this.collateral)
+                .dividedBy(this.leverage)
+
+            return new BigNumber(this.openPrice)
+                .plus(new BigNumber(liqPriceDistance).times(isLong ? -1 : 1))
+                .dividedBy(
+                    new BigNumber(1).plus(
+                        new BigNumber(this.market.baseSpreadRate).dividedBy(100).times(isLong ? -1 : 1),
+                    ),
+                )
+                .decimalPlaces(this.gravix.priceDecimals, BigNumber.ROUND_DOWN)
+                .toFixed()
+        }
+        return undefined
     }
 
     get position(): string | undefined {
