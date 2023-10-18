@@ -41,7 +41,7 @@ export class MarketStore {
     }
 
     get openFeeRate(): string | undefined {
-        if (this.market?.market.fees.openFeeRate) {
+        if (this.market?.market.fees.openFeeRate !== undefined) {
             return decimalPercent(this.market?.market.fees.openFeeRate.toString())
         }
         return undefined
@@ -56,9 +56,23 @@ export class MarketStore {
     }
 
     get baseSpreadRate(): string | undefined {
-        if (this.market?.market.fees.baseSpreadRate) {
+        if (this.market?.market.fees.baseSpreadRate !== undefined) {
             return decimalPercent(this.market.market.fees.baseSpreadRate.toString())
         }
         return undefined
+    }
+
+    get borrowBaseRatePerHour(): string | undefined {
+        return this.market?.market.fees.borrowBaseRatePerHour !== undefined
+            ? decimalPercent(this.market.market.fees.borrowBaseRatePerHour.toString())
+            : undefined
+    }
+
+    get maxTotalLongsUSD(): string | undefined {
+        return this.market?.market.maxTotalLongsUSD.toString()
+    }
+
+    public get maxTotalShortsUSD(): string | undefined {
+        return this.market?.market.maxTotalShortsUSD.toString()
     }
 }

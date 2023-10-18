@@ -4,6 +4,18 @@
     grid-row-start: 1;
     grid-row-end: 4;
     height: fit-content;
+
+    :global {
+        .ant-card-body {
+            padding: 4px 16px 16px;
+        }
+    }
+}
+
+.inner {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .longTab {
@@ -32,30 +44,67 @@
 .leverage {
     display: flex;
     align-items: center;
-    gap: 16px;
+    justify-content: space-between;
+
+    .title {
+        margin: 0;
+    }
 }
 
 .slider {
     flex-grow: 1;
 }
 
-.leverInput {
+.smallInput {
     width: 70px;
 }
 
-.collateral {
-    margin-top: 36px;
-}
+.slippage {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-.block {
-    margin-top: 18px;
+    .title {
+        margin: 0;
+    }
 }
 
 .price {
-    font-size: 20px;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .title {
+        margin: 0;
+    }
+
+    .value {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+    }
 }
 
-.amount {
-    margin: 0 0 8px;
+.tabs {
+    :global {
+        .ant-tabs-nav {
+            margin: 0;
+        }
+    }
+}
+
+.balance {
+    display: block;
+    margin: 4px 0 0;
+}
+
+.stats {
+    margin: 16px 0 0;
+    padding: 0 16px;
+
+    .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
 }

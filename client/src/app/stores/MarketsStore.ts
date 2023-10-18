@@ -44,8 +44,6 @@ export class MarketsStore {
             const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
             const markets = await gravix.getAllMarkets()
 
-            console.log(markets.map(mapMarketInfo))
-
             runInAction(() => {
                 this.state.markets = markets.map(mapMarketInfo)
             })
