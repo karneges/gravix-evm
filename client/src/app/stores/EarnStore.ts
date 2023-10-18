@@ -3,7 +3,7 @@ import { EvmWalletStore } from './EvmWalletStore.js'
 import { GravixVault, StgUsdtToken, UsdtToken } from '../../config.js'
 import { Reactions } from '../utils/reactions.js'
 import { approveTokens, getTokenBalance } from '../utils/gravix.js'
-import { ethers, BaseContract } from 'ethers'
+import { ethers } from 'ethers'
 import GravixAbi from '../../assets/abi/Gravix.json'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { Gravix } from '../../assets/misc/Gravix.js'
@@ -183,6 +183,8 @@ export class EarnStore {
             this.state.loading = true
         })
 
+        let gravix: Gravix | undefined
+
         try {
             if (!this.wallet.provider) {
                 throw new Error('wallet.provider must be defined')
@@ -196,17 +198,32 @@ export class EarnStore {
                 throw new Error('wallet.address must be defined')
             }
 
+            const provider = new ethers.BrowserProvider(this.wallet.provider)
+            const signer = await provider.getSigner()
+            gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+
             const amount = normalizeAmount(this.amount, 6)
             await approveTokens(UsdtToken, this.wallet.address, GravixVault, amount, this.wallet.provider)
-            const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
-            const signer = await browserProvider.getSigner()
-            const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+
+            const success = new Promise((resolve, reject) => {
+                gravix!
+                    .addListener('LiquidityPoolDeposit', address => {
+                        if (address === this.wallet.address) resolve(true)
+                    })
+                    .catch(reject)
+            })
+
             await gravix.depositLiquidity(amount)
+            await success
         } catch (e) {
             console.error(e)
         }
 
+        gravix?.removeAllListeners().catch(console.error)
+        this.syncBalance()
+
         runInAction(() => {
+            this.state.amount = ''
             this.state.loading = false
         })
     }
@@ -233,7 +250,7 @@ export class EarnStore {
             await approveTokens(StgUsdtToken, this.wallet.address, GravixVault, amount, this.wallet.provider)
             const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await browserProvider.getSigner()
-            const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+            const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
             await gravix.withdrawLiquidity(amount)
         } catch (e) {
             console.error(e)
