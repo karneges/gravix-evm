@@ -7,15 +7,15 @@ import { useStore } from '../../../hooks/useStore.js'
 import { PositionsListStore } from '../../../stores/PositionsListStore.js'
 import { IoClose } from 'react-icons/io5/index.js'
 
-function PositionItemCloseInner(): JSX.Element {
+function PositionItemCloseInner({ index }: { index: string }): JSX.Element {
     const positionClose = useStore(PositionsListStore)
     const [isLoading, setLoading] = React.useState(false)
 
     const handleClose = async () => {
         if (isLoading) return
         setLoading(true)
-        await positionClose.closePos()
-        // setLoading(false)
+        await positionClose.closePos(index)
+        setLoading(false)
     }
 
     return (

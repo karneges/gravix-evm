@@ -2,11 +2,10 @@ import React, { useMemo } from 'react'
 
 import styles from './index.module.scss'
 import { useStore } from '../../hooks/useStore.js'
-import { PositionsListStore, WithoutArr } from '../../stores/PositionsListStore.js'
+import { PositionsListStore, TGravixPosition } from '../../stores/PositionsListStore.js'
 import { observer } from 'mobx-react-lite'
 import { Typography, Table } from 'antd'
 import { formatDate } from '../../utils/format-date.js'
-import { IGravix } from '../../../assets/misc/Gravix.js'
 import { BigNumber } from 'bignumber.js'
 import { GravixStore } from '../../stores/GravixStore.js'
 import { decimalAmount } from '../../utils/decimal-amount.js'
@@ -24,7 +23,7 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Created',
                 dataIndex: 'createdAt',
                 key: 'createdAt',
-                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                render: (_: any, item: TGravixPosition) => (
                     <div className={styles.flexCol}>
                         <span>
                             {item.createdAt
@@ -46,7 +45,7 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Type',
                 dataIndex: 'positionType',
                 key: 'positionType',
-                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                render: (_: any, item: TGravixPosition) => (
                     <span>{item.positionType.toString() === '0' ? 'Long' : 'Short'}</span>
                 ),
             },
@@ -54,7 +53,7 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Size',
                 dataIndex: 'initialCollateral',
                 key: 'initialCollateral',
-                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                render: (_: any, item: TGravixPosition) => (
                     <span>{positionsList.countSize(item.initialCollateral.toString(), item.leverage.toString())}$</span>
                 ),
             },
@@ -62,7 +61,7 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Collateral',
                 dataIndex: 'initialCollateral',
                 key: 'initialCollateral',
-                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                render: (_: any, item: TGravixPosition) => (
                     <span>{decimalAmount(item.initialCollateral.toString(), gravix.baseNumber)}$</span>
                 ),
             },
@@ -70,7 +69,7 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Market price',
                 dataIndex: 'markPrice',
                 key: 'markPrice',
-                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                render: (_: any, item: TGravixPosition) => (
                     <span>{decimalAmount(item.markPrice.toString(), gravix.priceDecimals, 0)}$</span>
                 ),
             },
@@ -78,15 +77,30 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Open price',
                 dataIndex: 'openPrice',
                 key: 'openPrice',
-                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                render: (_: any, item: TGravixPosition) => (
                     <span>{decimalAmount(item.openPrice.toString(), gravix.priceDecimals, 0)}$</span>
+                ),
+            },
+            {
+                title: 'Liquidation',
+                dataIndex: 'liquidationThresholdRate',
+                key: 'liquidationThresholdRate',
+                render: (_: any, item: TGravixPosition, index: number) => (
+                    <span>
+                        {decimalAmount(
+                            positionsList.allUserViewPositions[index].liquidationPrice.toString(),
+                            gravix.priceDecimals,
+                            0,
+                        )}
+                        $
+                    </span>
                 ),
             },
             {
                 title: '',
                 dataIndex: '',
                 key: 'action',
-                render: () => <PositionItemClose />,
+                render: (_: any, item: TGravixPosition) => <PositionItemClose index={item.index} />,
             },
         ],
         [],
