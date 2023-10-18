@@ -1,7 +1,8 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { notification } from 'antd'
 import { BigNumber } from 'bignumber.js'
 import { Reactions } from '../utils/reactions.js'
-import { Contract, ethers, BaseContract } from 'ethers'
+import { ethers } from 'ethers'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import GravixAbi from '../../assets/abi/Gravix.json'
 import { Gravix } from '../../assets/misc/index.js'
@@ -10,35 +11,47 @@ import { GravixStore } from './GravixStore.js'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { normalizePercent } from '../utils/mix.js'
 import { GravixVault, UsdtToken } from '../../config.js'
-import { ERC20Abi } from '../../assets/abi/ERC20.js'
-import { approveTokens, getTokenBalance } from '../utils/gravix.js'
+import { approveTokens, getTokenBalance, mapIdxToTicker, normalizeLeverage } from '../utils/gravix.js'
+import { decimalAmount } from '../utils/decimal-amount.js'
+import { MarketStore } from './MarketStore.js'
 
 export enum DepositType {
-    LONG = '0',
-    SHORT = '1',
+    Long = '0',
+    Short = '1',
+}
+
+type AssetData = {
+    price: number
+    timestamp: number
+    signature: string
 }
 
 type State = {
     usdtBalance?: string
     loading?: boolean
+    depositType: DepositType
+    leverage: string
+    collateral?: string
+    slippage?: string
+    position?: string
+}
+
+const initialState: State = {
+    depositType: DepositType.Long,
+    leverage: '1',
+    slippage: '1',
 }
 
 export class DepositStore {
     protected reactions = new Reactions()
 
-    protected state: State = {}
-
-    isDarkMode = false
-    formDepositType = DepositType.LONG
-    leverageVal = 1
-    collateralVal = '1'
-    positionSizeVal = '1'
-    slippage = '1'
+    protected state = initialState
 
     constructor(
-        protected evmWallet: EvmWalletStore,
-        protected priceStore: PriceStore,
+        protected wallet: EvmWalletStore,
+        protected price: PriceStore,
         protected gravix: GravixStore,
+        protected market: MarketStore,
     ) {
         makeAutoObservable(
             this,
@@ -48,126 +61,55 @@ export class DepositStore {
             },
         )
 
-        this.reactions.create(
-            reaction(() => [this.leverageVal, this.collateralVal], this.onSizeChange),
-            reaction(() => this.evmWallet.address, this.syncUsdtBalance, { fireImmediately: true }),
-        )
+        this.reactions.create(reaction(() => this.wallet.address, this.syncUsdtBalance, { fireImmediately: true }))
     }
 
-    onTabChange = (key: string) => {
-        const val: DepositType = key === DepositType.LONG ? DepositType.LONG : DepositType.SHORT
-        this.formDepositType = val
+    setType(val: DepositType): void {
+        this.state.depositType = val
     }
 
-    onCollateralChange = (val: string) => {
-        this.collateralVal = val
+    setCollateral(value: string): void {
+        this.state.collateral = value
+        this.calcPosition()
     }
 
-    onSizeChange = () => {
-        this.positionSizeVal = new BigNumber(this.collateralVal).times(this.leverageVal).toFixed(2)
+    setPosition(value: string): void {
+        this.state.position = value
+        this.calcCollateral()
     }
 
-    onLeverageChange = (val: number | null) => {
-        this.leverageVal = val ? val : 1
+    setLeverage(value: string): void {
+        this.state.leverage = value
+        this.calcPosition()
     }
 
-    approveToken = async () => {
-        if (!this.evmWallet?.provider) return
-        const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
-        const signer = await browserProvider.getSigner()
-        const ERC20Token = new ethers.Contract(UsdtToken, ERC20Abi, signer)
-        const allowance = await ERC20Token.allowance(this.evmWallet.address, GravixVault)
-        const approvalDelta = new BigNumber(allowance.toString()).minus(
-            normalizeAmount('100000', this.gravix.baseNumber),
-        )
-        if (approvalDelta.lt(0)) {
-            await ERC20Token.approve(GravixVault, approvalDelta.abs().toFixed())
-        }
+    calcCollateral(): void {
+        this.state.collateral =
+            this.position && this.leverage && this.market.openFeeRate
+                ? new BigNumber(this.position)
+                      .dividedBy(
+                          new BigNumber(1)
+                              .minus(new BigNumber(this.leverage).times(this.market.openFeeRate).dividedBy(100))
+                              .times(this.leverage),
+                      )
+                      .decimalPlaces(6)
+                      .toString()
+                : undefined
     }
 
-    submitMarketOrder = async () => {
-        if (!this.evmWallet?.provider || !this.evmWallet.address) return
-        if (
-            !this.collateralNormalized ||
-            !this.openPriceNormalized ||
-            !this.leverageNormalized ||
-            !this.slippageNormalized ||
-            !this.priceStore.price
-        )
-            return
-
-        try {
-            await approveTokens(UsdtToken, this.evmWallet.address, GravixVault, '100000', this.evmWallet.provider)
-            const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
-            const signer = await browserProvider.getSigner()
-            const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
-            const assetData = await (
-                await fetch('https://api-cc35d.ondigitalocean.app/signature', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        marketIdx: 0,
-                        chainId: 59140,
-                    }),
-                })
-            ).json()
-            // const iface = new ethers.utils.Interface(contract.abi)
-            console.log(1, 'SUBMIT')
-            console.log(assetData, 'assetPrice')
-            // uint marketIdx
-            // PositionType positionType, // long(0)/Short(1)
-            // uint collateral, // 6 decimals number // тоже самое как в обычном гравиксе
-            // uint expectedPrice, // 8 decimals number // тоже самое как в обычном гравиксе
-            // uint leverage, // 6 decimals number // тоже самое как в обычном гравиксе
-            // uint maxSlippageRate, // % // тоже самое как в обычном гравиксе
-            // uint _assetPrice,  // данные поля вернёт ручка, по конкретному маркету
-            // uint timestamp,  //
-            // bytes calldata  signature //
-            const markets = await gravixContract.getAllMarkets()
-            const btcMarket = markets[0][0].toString()
-            // const collateral = new BigNumber(this.collateralVal).shiftedBy(6)
-            console.log(markets[0][0].toString(), 'markets')
-            console.log(markets, 'markets')
-            console.log(
-                {
-                    market: btcMarket,
-                    type: this.formDepositType,
-                    collateral: this.collateralNormalized,
-                    openPrice: this.openPriceNormalized,
-                    leverage: this.leverageNormalized,
-                    slippage: this.slippageNormalized,
-                    price: assetData.price,
-                    timestamp: assetData.timestamp,
-                    sig: assetData.signature,
-                },
-                'PAYLOAD',
-            )
-            await gravixContract
-                .openMarketPosition(
-                    btcMarket,
-                    this.formDepositType,
-                    this.collateralNormalized,
-                    this.openPriceNormalized,
-                    this.leverageNormalized,
-                    this.slippageNormalized,
-                    assetData.price,
-                    assetData.timestamp,
-                    assetData.signature,
-                )
-                .catch(err => console.log(err))
-        } catch {
-            console.log('err submitMarketOrder')
-        }
+    protected calcPosition(): void {
+        this.state.position =
+            this.collateral && this.openFee && this.leverage
+                ? new BigNumber(this.collateral).minus(this.openFee).times(this.leverage).decimalPlaces(6).toString()
+                : undefined
     }
 
     async syncUsdtBalance(): Promise<void> {
         let usdtBalance: string
 
         try {
-            if (this.evmWallet.provider && this.evmWallet.address) {
-                usdtBalance = await getTokenBalance(UsdtToken, this.evmWallet.address, this.evmWallet.provider)
+            if (this.wallet.provider && this.wallet.address) {
+                usdtBalance = await getTokenBalance(UsdtToken, this.wallet.address, this.wallet.provider)
             }
         } catch (e) {
             console.error(e)
@@ -178,28 +120,103 @@ export class DepositStore {
         })
     }
 
-    get test() {
-        return 'test'
-    }
+    async submit(): Promise<void> {
+        let success = false,
+            gravix: Gravix | undefined
 
-    public get getThemeMode(): boolean {
-        return this.isDarkMode ?? false
-    }
+        runInAction(() => {
+            this.state.loading = true
+        })
 
-    public get leverageNormalized(): string | undefined {
-        return this.leverageVal ? normalizeAmount(this.leverageVal.toString(), this.gravix.baseNumber) : undefined
-    }
+        try {
+            if (!this.wallet.provider) {
+                throw new Error('wallet.provider must be defined')
+            }
 
-    public get collateralNormalized(): string | undefined {
-        return this.collateralVal ? normalizeAmount(this.collateralVal.toString(), this.gravix.baseNumber) : undefined
-    }
+            if (!this.collateral) {
+                throw new Error('amount must be defined')
+            }
 
-    public get openPriceNormalized(): string | undefined {
-        return this.priceStore.price ? normalizeAmount(this.priceStore.price, this.gravix.priceDecimals) : undefined
-    }
+            if (!this.wallet.address) {
+                throw new Error('wallet.address must be defined')
+            }
 
-    public get slippageNormalized(): string | undefined {
-        return this.slippage ? normalizePercent(this.slippage) : undefined
+            if (!this.collateralNormalized) {
+                throw new Error('collateralNormalized must be defined')
+            }
+
+            if (!this.openPriceNormalized) {
+                throw new Error('openPriceNormalized must be defined')
+            }
+
+            if (!this.leverageNormalized) {
+                throw new Error('leverageNormalized must be defined')
+            }
+
+            if (!this.slippageNormalized) {
+                throw new Error('slippageNormalized must be defined')
+            }
+
+            const provider = new ethers.BrowserProvider(this.wallet.provider)
+            const signer = await provider.getSigner()
+            gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+            const assetData = await DepositStore.getAssetData(this.market.idx, '59140')
+
+            await approveTokens(
+                UsdtToken,
+                this.wallet.address,
+                GravixVault,
+                this.collateralNormalized,
+                this.wallet.provider,
+            )
+
+            const successListener = new Promise<boolean>((resolve, reject) => {
+                gravix!
+                    .addListener('MarketOrderExecution', (address, data) => {
+                        if (address === this.wallet.address) {
+                            const price = decimalAmount(data.openPrice, 8)
+                            const type = data.positionType === '0' ? 'Long' : 'Short'
+                            notification.success({
+                                message: 'Market order executed',
+                                description: `${mapIdxToTicker(data.marketIdx.toString())} ${type} open at ${price}`,
+                                placement: 'bottomRight',
+                            })
+                            resolve(true)
+                        }
+                    })
+                    .catch(reject)
+            })
+
+            await gravix.openMarketPosition(
+                this.market.idx,
+                this.state.depositType,
+                this.collateralNormalized,
+                this.openPriceNormalized,
+                this.leverageNormalized,
+                this.slippageNormalized,
+                assetData.price,
+                assetData.timestamp,
+                assetData.signature,
+            )
+
+            success = await successListener
+        } catch (e) {
+            console.error(e)
+            notification.error({
+                message: 'Market order canceled',
+                placement: 'bottomRight',
+            })
+        }
+
+        gravix?.removeAllListeners().catch(console.error)
+        await this.syncUsdtBalance()
+
+        runInAction(() => {
+            this.state.collateral = success ? '' : this.collateral
+            this.state.leverage = success ? '1' : this.leverage
+            this.state.position = success ? '' : this.position
+            this.state.loading = false
+        })
     }
 
     get loading(): boolean {
@@ -210,11 +227,120 @@ export class DepositStore {
         return this.state.usdtBalance
     }
 
+    get collateral(): string | undefined {
+        return this.state.collateral
+    }
+
+    get collateralNormalized(): string | undefined {
+        return this.state.collateral ? normalizeAmount(this.state.collateral, this.gravix.baseNumber) : undefined
+    }
+
     get amountIsValid(): boolean {
         if (this.state.usdtBalance && this.collateralNormalized) {
             return new BigNumber(this.state.usdtBalance).gte(this.collateralNormalized)
         }
 
         return false
+    }
+
+    get depositType(): DepositType {
+        return this.state.depositType
+    }
+
+    get leverage(): string {
+        return this.state.leverage
+    }
+
+    get leverageNormalized(): string | undefined {
+        return this.leverage ? normalizeLeverage(this.leverage) : undefined
+    }
+
+    get openFee(): string | undefined {
+        return this.collateral && this.leverage && this.market.openFeeRate
+            ? new BigNumber(this.collateral)
+                  .times(this.leverage)
+                  .times(this.market.openFeeRate)
+                  .dividedBy(100)
+                  .toFixed()
+            : undefined
+    }
+
+    get position(): string | undefined {
+        return this.state.position
+    }
+
+    get positionNormalized(): string | undefined {
+        return this.position ? normalizeAmount(this.position, 6) : undefined
+    }
+
+    get dynamicSpread(): string | undefined {
+        const isLong = this.depositType === DepositType.Long
+
+        console.log(this.price.priceNormalized)
+
+        return this.market.totalLongs &&
+            this.positionNormalized &&
+            this.market.totalShorts &&
+            this.market.depth &&
+            this.price.priceNormalized
+            ? BigNumber.max(
+                  0,
+                  new BigNumber(isLong ? this.market.totalLongs : this.market.totalShorts)
+                      .plus(
+                          new BigNumber(this.positionNormalized)
+                              .times(10 ** 6)
+                              .dividedBy(this.price.priceNormalized)
+                              .times(0.5),
+                      )
+                      .minus(isLong ? this.market.totalShorts : this.market.totalLongs)
+                      .dividedBy(this.market.depth)
+                      .times(0.1),
+              ).toFixed()
+            : undefined
+    }
+
+    get spread(): string | undefined {
+        return this.market.baseSpreadRate && this.dynamicSpread
+            ? new BigNumber(this.market.baseSpreadRate).plus(this.dynamicSpread).toFixed()
+            : undefined
+    }
+
+    get openPrice(): string | undefined {
+        const isLong = this.depositType === DepositType.Long
+
+        return this.price.price && this.spread
+            ? new BigNumber(this.price.price)
+                  .plus(
+                      new BigNumber(this.price.price)
+                          .times(this.spread)
+                          .dividedBy(100)
+                          .times(isLong ? 1 : -1),
+                  )
+                  .decimalPlaces(this.gravix.priceDecimals, BigNumber.ROUND_DOWN)
+                  .toString()
+            : undefined
+    }
+
+    public get openPriceNormalized(): string | undefined {
+        return this.openPrice ? normalizeAmount(this.openPrice, 8) : undefined
+    }
+
+    get slippageNormalized(): string | undefined {
+        return this.state.slippage ? normalizePercent(this.state.slippage) : undefined
+    }
+
+    static async getAssetData(marketIdx: string, chainId: string): Promise<AssetData> {
+        const data = await fetch('https://api-cc35d.ondigitalocean.app/signature', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                marketIdx,
+                chainId,
+            }),
+        }).then(resp => resp.json())
+
+        return data
     }
 }

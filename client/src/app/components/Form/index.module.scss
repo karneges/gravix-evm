@@ -29,11 +29,18 @@
     }
 }
 
+.leverage {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.slider {
+    flex-grow: 1;
+}
+
 .leverInput {
-    input {
-        min-height: 36px;
-        font-size: 20px!important;
-    }
+    width: 70px;
 }
 
 .collateral {

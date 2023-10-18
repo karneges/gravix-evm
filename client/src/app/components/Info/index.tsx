@@ -1,16 +1,19 @@
-import React from 'react'
+import * as React from 'react'
 import { BigNumber } from 'bignumber.js'
 import { Select, Flex, Typography } from 'antd'
 
 import styles from './index.module.scss'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '../../hooks/useStore.js'
-import { Market, MarketStore } from '../../stores/MarketStore.js'
+import { MarketStore } from '../../stores/MarketStore.js'
 import { PriceStore } from '../../stores/PriceStore.js'
+import { MarketsStore } from '../../stores/MarketsStore.js'
+import { mapIdxToTicker } from '../../utils/gravix.js'
 
 export const Info: React.FC = observer(() => {
     const market = useStore(MarketStore)
     const price = useStore(PriceStore)
+    const markets = useStore(MarketsStore)
 
     return (
         <div className={styles.info}>
@@ -18,30 +21,18 @@ export const Info: React.FC = observer(() => {
                 <Select
                     className={styles.select}
                     size="large"
-                    value={market.market}
-                    onChange={market.setMarket}
-                    options={[
-                        {
-                            label: 'BTC/USD',
-                            value: Market.BTC,
-                        },
-                        {
-                            label: 'ETH/USD',
-                            value: Market.ETH,
-                        },
-                        {
-                            label: 'BNB/USD',
-                            value: Market.BNB,
-                        },
-                    ]}
+                    value={market.idx}
+                    onChange={market.setIdx}
+                    options={markets.markets.map(item => ({
+                        label: mapIdxToTicker(item.marketIdx.toString()),
+                        value: item.marketIdx.toString(),
+                    }))}
                 />
 
                 <Flex className={styles.item} vertical>
                     <Typography.Text className={styles.label}>Price</Typography.Text>
                     <Typography.Text className={styles.value} strong>
-                        {price.price ? (
-                            `${new BigNumber(price.price).toFixed(2)} $`
-                        ) : '\u200B'}
+                        {price.price ? `$${new BigNumber(price.price).toFixed(2)}` : '\u200B'}
                     </Typography.Text>
                 </Flex>
 
