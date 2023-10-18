@@ -6,21 +6,13 @@ import { useStore } from '../../hooks/useStore.js'
 import { EarnAction, EarnStore } from '../../stores/EarnStore.js'
 import { observer } from 'mobx-react-lite'
 import { decimalAmount } from '../../utils/decimal-amount.js'
+import { onChangeFn, onSubmitFn } from '../../utils/input.js'
 
 export const EarnForm: React.FC = observer(() => {
     const form = useStore(EarnStore)
 
-    const onChangeAmount: React.ChangeEventHandler<HTMLInputElement> = e => {
-        form.setAmount(e.currentTarget.value)
-    }
-
     const onChangeTab = (e: string) => {
         form.setAction(e as EarnAction)
-    }
-
-    const onSubmit: React.FormEventHandler<HTMLFormElement> = e => {
-        e.preventDefault()
-        form.submit()
     }
 
     return (
@@ -45,11 +37,11 @@ export const EarnForm: React.FC = observer(() => {
                     ]}
                 />
 
-                <form onSubmit={onSubmit}>
+                <form onSubmit={onSubmitFn(form.submit)}>
                     <Input
                         className={styles.input}
                         value={form.amount}
-                        onChange={onChangeAmount}
+                        onChange={onChangeFn(form.setAmount)}
                         disabled={form.loading}
                     />
 

@@ -1,23 +1,20 @@
 import { makeAutoObservable } from 'mobx'
-
-export enum Market {
-    BTC = 'BTC',
-    ETH = 'ETH',
-    BNB = 'BNB',
-}
+import { MarketsStore } from './MarketsStore.js'
+import { MarketInfo } from '../../types.js'
+import { decimalPercent } from '../utils/gravix.js'
 
 type State = {
-    market: Market
+    idx: string
 }
 
 const initialState: State = {
-    market: Market.BTC,
+    idx: '0',
 }
 
 export class MarketStore {
     protected state = initialState
 
-    constructor() {
+    constructor(protected markets: MarketsStore) {
         makeAutoObservable(
             this,
             {},
@@ -27,11 +24,41 @@ export class MarketStore {
         )
     }
 
-    setMarket(val: Market): void {
-        this.state.market = val
+    setIdx(val: string): void {
+        this.state.idx = val
     }
 
-    get market(): Market {
-        return this.state.market
+    get idx(): string {
+        return this.state.idx
+    }
+
+    get market(): MarketInfo | undefined {
+        return this.markets.byIdx[this.idx]
+    }
+
+    get totalLongs(): string | undefined {
+        return this.market?.market.totalLongsAsset.toString()
+    }
+
+    get openFeeRate(): string | undefined {
+        if (this.market?.market.fees.openFeeRate) {
+            return decimalPercent(this.market?.market.fees.openFeeRate.toString())
+        }
+        return undefined
+    }
+
+    get totalShorts(): string | undefined {
+        return this.market?.market.totalShortsAsset.toString()
+    }
+
+    get depth(): string | undefined {
+        return this.market?.market.depthAsset.toString()
+    }
+
+    get baseSpreadRate(): string | undefined {
+        if (this.market?.market.fees.baseSpreadRate) {
+            return decimalPercent(this.market.market.fees.baseSpreadRate.toString())
+        }
+        return undefined
     }
 }

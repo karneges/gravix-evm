@@ -1,31 +1,37 @@
 import { ethers } from 'ethers'
-import { Market } from '../stores/MarketStore.js'
 import { MetaMaskInpageProvider } from '@metamask/providers'
 import { ERC20Abi } from '../../assets/abi/ERC20.js'
 import { BigNumber } from 'bignumber.js'
 import { delay } from './delay.js'
 
-export const mapChartSymbol = (market: Market) => {
-    switch (market) {
-        case Market.BTC:
+export type WithoutArr<T> = {
+    [Key in {
+        [key in keyof T]: key extends keyof Array<any> ? never : key extends `${number}` ? never : key
+    }[keyof T]]: T[Key]
+}
+
+export const mapIdxToTicker = (idx: string) => {
+    switch (idx) {
+        case '0':
+            return 'BTC/USD'
+        default:
+            throw new Error('Unknown idx')
+    }
+}
+
+export const mapChartSymbol = (idx: string) => {
+    switch (idx) {
+        case '0':
             return 'BINANCE:BTCUSDT'
-        case Market.ETH:
-            return 'BINANCE:ETHUSDT'
-        case Market.BNB:
-            return 'BINANCE:BNBUSDT'
         default:
             throw new Error('Unknown market')
     }
 }
 
-export const mapApiSymbol = (market: Market) => {
-    switch (market) {
-        case Market.BTC:
+export const mapApiSymbol = (idx: string) => {
+    switch (idx) {
+        case '0':
             return 'BTCUSDT'
-        case Market.ETH:
-            return 'ETHUSDT'
-        case Market.BNB:
-            return 'BNBUSDT'
         default:
             throw new Error('Unknown market')
     }
@@ -70,3 +76,20 @@ export const approveTokens = async (
         }
     }
 }
+
+export const decimalPercent = (value: string): string =>
+    new BigNumber(value)
+        .dividedBy(10 ** 12)
+        .times(100)
+        .toFixed()
+
+export const normalizePercent = (value: string): string =>
+    new BigNumber(value)
+        .dividedBy(100)
+        .times(10 ** 12)
+        .toFixed()
+
+export const decimalLeverage = (value: string | number): string => new BigNumber(value).dividedBy(1000000).toFixed()
+
+export const normalizeLeverage = (value: string | number): string =>
+    new BigNumber(value).times(1000000).decimalPlaces(0, BigNumber.ROUND_DOWN).toFixed()

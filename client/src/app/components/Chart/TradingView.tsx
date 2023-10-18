@@ -35,7 +35,7 @@ export const TradingView: React.FC = observer(() => {
             .then(() => {
                 widget = new (window as any).TradingView.widget({
                     autosize: true,
-                    symbol: mapChartSymbol(market.market),
+                    symbol: mapChartSymbol(market.idx),
                     interval: 'D',
                     timezone: 'Etc/UTC',
                     theme: gravix.isDarkMode ? 'dark' : 'light',
@@ -52,13 +52,12 @@ export const TradingView: React.FC = observer(() => {
             if (widget) {
                 try {
                     widget.remove()
-                }
-                catch (e) {
+                } catch (e) {
                     console.error(e)
                 }
             }
         }
-    }, [market.market, gravix.isDarkMode])
+    }, [market.idx, gravix.isDarkMode])
 
     return (
         <div

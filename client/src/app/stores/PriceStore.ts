@@ -3,6 +3,7 @@ import { makeAutoObservable, reaction, runInAction } from 'mobx'
 import { MarketStore } from './MarketStore.js'
 import { mapApiSymbol } from '../utils/gravix.js'
 import { Reactions } from '../utils/reactions.js'
+import { normalizeAmount } from '../utils/normalize-amount.js'
 
 type State = {
     price?: string
@@ -46,7 +47,7 @@ export class PriceStore {
     async syncPrice(): Promise<void> {
         try {
             const fetchBTCFeed = await fetch(
-                `https://api.binance.com/api/v3/avgPrice?symbol=${mapApiSymbol(this.market.market)}`,
+                `https://api.binance.com/api/v3/avgPrice?symbol=${mapApiSymbol(this.market.idx)}`,
             )
 
             const priceFeed = await fetchBTCFeed.json()
@@ -61,5 +62,9 @@ export class PriceStore {
 
     get price(): string | undefined {
         return this.state.price
+    }
+
+    get priceNormalized(): string | undefined {
+        return this.price ? normalizeAmount(this.price, 8) : undefined
     }
 }
