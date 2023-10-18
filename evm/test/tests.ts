@@ -17,6 +17,7 @@ import { PriceService } from "./priceService";
 import { Signer } from "ethers";
 import { checkOpenedPositionMath } from "./utils/mathChecks";
 import { ERC20Tokens } from "../typechain-types";
+import { IGravix } from "../typechain-types/contracts/Gravix";
 
 const basic_config: MarketConfig = {
   priceSource: 1,
@@ -124,8 +125,8 @@ describe("Lock", function () {
       owner: Signer;
       priceNode: Signer;
     };
-    const initialPrice = 100n * USDT_DECIMALS;
-    const closePrice = 101n * USDT_DECIMALS;
+    const initialPrice = 100n * PRICE_DECIMALS;
+    const closePrice = 101n * PRICE_DECIMALS;
 
     before(async () => {
       context = await loadFixture(deployOneYearLockFixture);
@@ -329,7 +330,7 @@ describe("Lock", function () {
       priceNode: Signer;
       otherAccount: Signer;
     };
-    const initialPrice = 1000n * USDT_DECIMALS;
+    const initialPrice = 1000n * PRICE_DECIMALS;
 
     before(async () => {
       context = await loadFixture(deployOneYearLockFixture);
@@ -427,7 +428,6 @@ describe("Lock", function () {
           },
         ])
         .then((res) => res.wait());
-
       const liquidationEvent = await gravixVault.contract
         .queryFilter(
           gravixVault.contract.getEvent("LiquidatePosition"),
@@ -440,8 +440,19 @@ describe("Lock", function () {
       expect(liquidationEvent.args.user).to.be.eq(await owner.getAddress());
       const updatedCollateral =
         positionView.position.initialCollateral - positionView.position.openFee;
+      const vaultDetails: WithoutArr<IGravix.DetailsStructOutput> =
+        await gravixVault.contract.getDetails();
 
-      const vaultDetails = await gravixVault.contract.getDetails();
+      type WithoutArr<T> = {
+        [Key in {
+          [key in keyof T]: key extends keyof Array<any>
+            ? never
+            : key extends `${number}`
+            ? never
+            : key;
+        }[keyof T]]: T[Key];
+      };
+      vaultDetails.
 
       const liquidationReward =
         (updatedCollateral * vaultDetails.liquidation.rewardShare) /

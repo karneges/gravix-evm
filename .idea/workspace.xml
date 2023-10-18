@@ -6,7 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="3ddf1721-b4a7-4697-b9c4-5d44ff747eea" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evm/scripts/setMarket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/evm/scripts/setMarket.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/stores/PositionsListStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/PositionsListStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/evm/test/tests.ts" beforeDir="false" afterPath="$PROJECT_DIR$/evm/test/tests.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,7 +79,7 @@
       <recent name="O:\projects\broxus\gravix-evm" />
     </key>
   </component>
-  <component name="RunManager" selected="npm.start">
+  <component name="RunManager" selected="npm.tests">
     <configuration name="deploy" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/evm/package.json" />
       <command value="run" />
@@ -131,11 +132,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="npm.tests" />
         <item itemvalue="npm.start" />
         <item itemvalue="npm.start:dev" />
         <item itemvalue="npm.deploy" />
         <item itemvalue="npm.generate:contracts" />
-        <item itemvalue="npm.tests" />
       </list>
     </recent_temporary>
   </component>
@@ -153,7 +154,10 @@
       <workItem from="1697548628258" duration="2394000" />
       <workItem from="1697551124019" duration="1433000" />
       <workItem from="1697552629720" duration="6824000" />
-      <workItem from="1697563874218" duration="6434000" />
+      <workItem from="1697563874218" duration="12054000" />
+      <workItem from="1697623922785" duration="14000" />
+      <workItem from="1697648189240" duration="885000" />
+      <workItem from="1697661798096" duration="47000" />
     </task>
     <servers />
   </component>

@@ -53,7 +53,7 @@ export class PositionsListStore {
         const filteredPositions = position.filter(_ => (_[1].createdAt.toString() !== '0' ? true : false))
         console.log(position, 'initApp')
         const assetData = await (
-            await fetch('https://api-cc35d.ondigitalocean.app/signature', {
+            await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
