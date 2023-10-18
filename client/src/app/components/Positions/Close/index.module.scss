@@ -1,0 +1,23 @@
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-gap: 6px;
+    padding: 4px 0;
+    min-width: 36px;
+    color: rgba(255, 255, 255, 0.48);
+
+    svg {
+        color: rgba(255, 255, 255, 0.48);
+    }
+
+    &:hover svg {
+        color: rgb(255, 255, 255);
+    }
+}
+
+.closeWrap {
+    display: flex;
+    justify-content: center;
+    min-width: 24px;
+}

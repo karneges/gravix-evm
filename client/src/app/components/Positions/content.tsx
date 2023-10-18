@@ -8,24 +8,24 @@ import { Typography, Table } from 'antd'
 import { formatDate } from '../../utils/format-date.js'
 import { IGravix } from '../../../assets/misc/Gravix.js'
 import { BigNumber } from 'bignumber.js'
+import { GravixStore } from '../../stores/GravixStore.js'
+import { decimalAmount } from '../../utils/decimal-amount.js'
+import { PositionItemClose } from './Close/index.js'
 
 const { Title } = Typography
 
 export const PositionsContent: React.FC = observer(() => {
     const positionsList = useStore(PositionsListStore)
+    const gravix = useStore(GravixStore)
 
     const columns = useMemo(
         () => [
             {
                 title: 'Created',
-                dataIndex: '0',
-                key: '0',
+                dataIndex: 'createdAt',
+                key: 'createdAt',
                 render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
                     <div className={styles.flexCol}>
-                        {[1].map(() => {
-                            console.log(item, 'test')
-                            return 1
-                        })}
                         <span>
                             {item.createdAt
                                 ? formatDate(new BigNumber(item.createdAt.toString()).times(1000).toNumber(), 'HH:mm')
@@ -46,6 +46,47 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Type',
                 dataIndex: 'positionType',
                 key: 'positionType',
+                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                    <span>{item.positionType.toString() === '0' ? 'Long' : 'Short'}</span>
+                ),
+            },
+            {
+                title: 'Size',
+                dataIndex: 'initialCollateral',
+                key: 'initialCollateral',
+                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                    <span>{positionsList.countSize(item.initialCollateral.toString(), item.leverage.toString())}$</span>
+                ),
+            },
+            {
+                title: 'Collateral',
+                dataIndex: 'initialCollateral',
+                key: 'initialCollateral',
+                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                    <span>{decimalAmount(item.initialCollateral.toString(), gravix.baseNumber)}$</span>
+                ),
+            },
+            {
+                title: 'Market price',
+                dataIndex: 'markPrice',
+                key: 'markPrice',
+                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                    <span>{decimalAmount(item.markPrice.toString(), gravix.priceDecimals, 0)}$</span>
+                ),
+            },
+            {
+                title: 'Open price',
+                dataIndex: 'openPrice',
+                key: 'openPrice',
+                render: (_: any, item: WithoutArr<IGravix.PositionStructOutput>) => (
+                    <span>{decimalAmount(item.openPrice.toString(), gravix.priceDecimals, 0)}$</span>
+                ),
+            },
+            {
+                title: '',
+                dataIndex: '',
+                key: 'action',
+                render: () => <PositionItemClose />,
             },
         ],
         [],
@@ -59,7 +100,7 @@ export const PositionsContent: React.FC = observer(() => {
                 columns={columns}
                 loading={false}
                 scroll={{ x: true }}
-                rowKey={record => record.toString()}
+                rowKey={record => record.createdAt.toString()}
             />
         </div>
     )
