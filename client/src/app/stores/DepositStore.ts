@@ -15,16 +15,11 @@ import { approveTokens, mapIdxToTicker, normalizeLeverage } from '../utils/gravi
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { MarketStore } from './MarketStore.js'
 import { BalanceStore } from './BalanceStore.js'
+import { MarketStatsStore } from './MarketStatsStore.js'
 
 export enum DepositType {
     Long = '0',
     Short = '1',
-}
-
-type AssetData = {
-    price: number
-    timestamp: number
-    signature: string
 }
 
 type State = {
@@ -52,6 +47,7 @@ export class DepositStore {
         protected price: PriceStore,
         protected gravix: GravixStore,
         protected market: MarketStore,
+        protected marketStats: MarketStatsStore,
         protected balance: BalanceStore,
     ) {
         makeAutoObservable(
@@ -148,10 +144,14 @@ export class DepositStore {
                 throw new Error('market.idx must be defined')
             }
 
+            if (!this.marketStats.marketAssetData) {
+                throw new Error('marketAssetData not defined')
+            }
+
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
             gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
-            const assetData = await DepositStore.getAssetData(this.market.idx, this.gravix.chainId)
+            const assetData = this.marketStats.marketAssetData
 
             await approveTokens(
                 UsdtToken,
@@ -369,20 +369,5 @@ export class DepositStore {
 
     get isEnabled(): boolean | undefined {
         return this.isValid && this.amountIsValid && this.isSpreadValid === true
-    }
-
-    static async getAssetData(marketIdx: string, chainId: number): Promise<AssetData> {
-        const data = await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                marketIdx,
-                chainId,
-            }),
-        }).then(resp => resp.json())
-
-        return data
     }
 }

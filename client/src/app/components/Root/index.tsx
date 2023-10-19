@@ -37,27 +37,33 @@ export const Root: React.FC = () => {
                                                             MarketStatsStore,
                                                             price,
                                                             market,
-                                                        )
-                                                        const DepositProvider = useProvider(
-                                                            DepositStore,
                                                             evmWallet,
-                                                            price,
-                                                            gravix,
-                                                            market,
-                                                            balance,
                                                         )
-
                                                         return (
                                                             <MarketStatsProvider>
-                                                                <DepositProvider>
-                                                                    <Router>
-                                                                        <Switch>
-                                                                            <Route path={routes.main}>
-                                                                                <RootContent />
-                                                                            </Route>
-                                                                        </Switch>
-                                                                    </Router>
-                                                                </DepositProvider>
+                                                                {marketStats => {
+                                                                    const DepositProvider = useProvider(
+                                                                        DepositStore,
+                                                                        evmWallet,
+                                                                        price,
+                                                                        gravix,
+                                                                        market,
+                                                                        marketStats,
+                                                                        balance,
+                                                                    )
+
+                                                                    return (
+                                                                        <DepositProvider>
+                                                                            <Router>
+                                                                                <Switch>
+                                                                                    <Route path={routes.main}>
+                                                                                        <RootContent />
+                                                                                    </Route>
+                                                                                </Switch>
+                                                                            </Router>
+                                                                        </DepositProvider>
+                                                                    )
+                                                                }}
                                                             </MarketStatsProvider>
                                                         )
                                                     }}
