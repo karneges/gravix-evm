@@ -49,7 +49,7 @@ export class PositionsListStore {
 
     init() {
         this.reactions.create(
-            reaction(() => [this.evmWallet.address, this.evmWallet.chainId], this.reload, { fireImmediately: true }),
+            reaction(() => [this.evmWallet.address, this.evmWallet.chainId, this.market.idx], this.reload),
         )
     }
 
@@ -85,6 +85,7 @@ export class PositionsListStore {
         if (!this.evmWallet.provider || !this.evmWallet.address) return
         this.provider = new ethers.BrowserProvider(this.evmWallet.provider)
         const assetData = await this.market.loadAssetData()
+        console.log(assetData, 'ASSET')
 
         if (!assetData) {
             throw new Error('no asset data')

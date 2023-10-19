@@ -37,6 +37,7 @@ export class MarketStore {
     }
 
     async loadAssetData(): Promise<TAssetData | undefined> {
+        if (!this.idx) return undefined
         const assetData = await (
             await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
                 method: 'POST',
