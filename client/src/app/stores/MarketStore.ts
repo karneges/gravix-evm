@@ -1,7 +1,7 @@
 import { makeAutoObservable } from 'mobx'
 import { MarketsStore } from './MarketsStore.js'
 import { MarketInfo } from '../../types.js'
-import { decimalPercent } from '../utils/gravix.js'
+import { decimalLeverage, decimalPercent } from '../utils/gravix.js'
 
 type State = {
     idx: string
@@ -72,7 +72,11 @@ export class MarketStore {
         return this.market?.market.maxTotalLongsUSD.toString()
     }
 
-    public get maxTotalShortsUSD(): string | undefined {
+    get maxTotalShortsUSD(): string | undefined {
         return this.market?.market.maxTotalShortsUSD.toString()
+    }
+
+    get maxLeverage(): string | undefined {
+        return this.market?.market.maxLeverage ? decimalLeverage(this.market.market.maxLeverage.toString()) : undefined
     }
 }
