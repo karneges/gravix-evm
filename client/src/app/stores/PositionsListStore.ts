@@ -1,4 +1,5 @@
 import { ethers, Contract, BaseContract } from 'ethers'
+import { notification } from 'antd'
 import { makeAutoObservable, reaction, runInAction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import { GravixVault } from '../../config.js'
@@ -11,14 +12,18 @@ import { GravixStore } from './GravixStore.js'
 import { BigNumber } from 'bignumber.js'
 import { FullPositionData, PositionViewData, TGravixPosition, WithoutArr } from '../../types.js'
 import { lastOfCalls } from '../utils/last-of-calls.js'
+import { mapIdxToTicker } from '../utils/gravix.js'
 
 type State = {
     marketOrders?: WithoutArr<TGravixPosition>[]
     marketOrdersFull?: FullPositionData[]
     marketOrdersPosView?: PositionViewData[]
+    closeLoading: { [k: string]: boolean | undefined }
 }
 
-const initialState: State = {}
+const initialState: State = {
+    closeLoading: {},
+}
 
 export class PositionsListStore {
     protected reactions = new Reactions()
@@ -42,14 +47,14 @@ export class PositionsListStore {
         this.reactions.create(reaction(() => [this.evmWallet.address], this.initApp, { fireImmediately: true }))
     }
 
-    protected event = {
-        address: GravixVault,
-    }
-
     dispose() {
         this.reactions.destroy()
         this.provider?.off(this.event, this.onContract).catch(console.error)
         this.state = initialState
+    }
+
+    protected event = {
+        address: GravixVault,
     }
 
     protected onContract = lastOfCalls(() => {
@@ -118,6 +123,10 @@ export class PositionsListStore {
     async closePos(key: string) {
         if (!this.evmWallet.provider || !this.evmWallet.address) return
 
+        runInAction(() => {
+            this.state.closeLoading[key] = true
+        })
+
         try {
             const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
             const signer = await browserProvider.getSigner()
@@ -136,9 +145,32 @@ export class PositionsListStore {
                 })
             ).json()
 
+            const successListener = new Promise<boolean>((resolve, reject) => {
+                gravixContract!
+                    .addListener('ClosePosition', (address, _, data) => {
+                        if (address === this.evmWallet.address) {
+                            const price = decimalAmount(data.closePrice.toString(), 8)
+                            const type = data.position.positionType.toString() === '0' ? 'Long' : 'Short'
+                            const ticker = mapIdxToTicker(data.position.marketIdx.toString())
+                            notification.success({
+                                message: 'Position closed',
+                                description: `${ticker} ${type} closed at $${price}`,
+                                placement: 'bottomRight',
+                            })
+                            resolve(true)
+                        }
+                    })
+                    .catch(reject)
+            })
+
             await gravixContract.closeMarketPosition(0, key, assetData.price, assetData.timestamp, assetData.signature)
+
+            await successListener
         } catch (e) {
             console.error(e)
+            runInAction(() => {
+                this.state.closeLoading[key] = false
+            })
         }
     }
 
@@ -160,6 +192,10 @@ export class PositionsListStore {
 
     public get positionsById(): { [k: string]: WithoutArr<TGravixPosition> | undefined } {
         return this.state.marketOrdersFull ? Object.fromEntries(this.state.marketOrdersFull as any) : {}
+    }
+
+    public get closeLoading(): State['closeLoading'] {
+        return this.state.closeLoading
     }
 }
 

@@ -12,13 +12,11 @@ import { GravixStore } from '../../../stores/GravixStore.js'
 function PositionItemCloseInner({ index }: { index: string }): JSX.Element {
     const positionClose = useStore(PositionsListStore)
     const gravix = useStore(GravixStore)
-    const [isLoading, setLoading] = React.useState(false)
+
+    const loading = positionClose.closeLoading[index]
 
     const handleClose = async () => {
-        if (isLoading) return
-        setLoading(true)
         await positionClose.closePos(index)
-        setLoading(false)
     }
 
     return (
@@ -26,9 +24,10 @@ function PositionItemCloseInner({ index }: { index: string }): JSX.Element {
             <Button
                 className={classNames(styles.btn, gravix.getThemeMode ? styles.darkBtn : styles.lightBtn)}
                 onClick={handleClose}
+                disabled={loading}
             >
-                {isLoading && <Spin size="small" className={styles.closeWrap} />}
-                {!isLoading && <IoClose />}
+                {loading && <Spin size="small" className={styles.closeWrap} />}
+                {!loading && <IoClose />}
             </Button>
         </>
     )
