@@ -13,6 +13,7 @@ enum ETheme {
 
 type State = {
     maxPnlRate?: bigint
+    minPositionCollateral?: bigint
 }
 
 export class GravixStore {
@@ -76,6 +77,7 @@ export class GravixStore {
 
             runInAction(() => {
                 this.state.maxPnlRate = details.maxPnlRate
+                this.state.minPositionCollateral = details.minPositionCollateral
             })
         } catch (e) {
             console.error(e)
@@ -88,5 +90,9 @@ export class GravixStore {
 
     get maxPnlRate(): string | undefined {
         return this.state.maxPnlRate?.toString()
+    }
+
+    get minPositionCollateral(): string | undefined {
+        return this.state.minPositionCollateral?.toString()
     }
 }

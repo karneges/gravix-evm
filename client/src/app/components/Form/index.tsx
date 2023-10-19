@@ -9,10 +9,11 @@ import { DepositStore, DepositType } from '../../stores/DepositStore.js'
 import classNames from 'classnames'
 import { PriceStore } from '../../stores/PriceStore.js'
 import { decimalAmount } from '../../utils/decimal-amount.js'
-import { onChangeFn, onSubmitFn } from '../../utils/input.js'
+import { onSubmitFn } from '../../utils/input.js'
 import { MarketStore } from '../../stores/MarketStore.js'
 import { decimalPercent } from '../../utils/gravix.js'
 import { GravixStore } from '../../stores/GravixStore.js'
+import { useAmountField } from '../../hooks/useAmountField.js'
 
 const { Title, Paragraph } = Typography
 
@@ -40,6 +41,46 @@ export const Form: React.FC = observer(() => {
     const onChangeSlider = (value: number | number[]) => {
         deposit.setLeverage(value.toString())
     }
+
+    const leverageField = useAmountField({
+        decimals: 2,
+        defaultValue: '1',
+        max: market.maxLeverage,
+        min: '1',
+        onBlur: value => {
+            if (value !== deposit.leverage) {
+                deposit.setLeverage(value)
+            }
+        },
+        onChange: deposit.setLeverage,
+    })
+
+    const collateralField = useAmountField({
+        decimals: 6,
+        onBlur: value => {
+            if (value !== deposit.collateral) {
+                deposit.setCollateral(value)
+            }
+        },
+        onChange: deposit.setCollateral,
+    })
+
+    const positionField = useAmountField({
+        decimals: 6,
+        onBlur: value => {
+            if (value !== deposit.position) {
+                deposit.setPosition(value)
+            }
+        },
+        onChange: deposit.setPosition,
+    })
+
+    const slippageField = useAmountField({
+        decimals: 4,
+        defaultValue: '1',
+        onBlur: deposit.setSlippage,
+        onChange: deposit.setSlippage,
+    })
 
     return (
         <div className={styles.form}>
@@ -70,7 +111,8 @@ export const Form: React.FC = observer(() => {
                             className={styles.bigInput}
                             addonAfter="USDT"
                             value={deposit.collateral}
-                            onChange={onChangeFn(deposit.setCollateral)}
+                            onChange={collateralField.onChange}
+                            onBlur={collateralField.onBlur}
                             disabled={deposit.loading}
                         />
                         <Typography.Text className={styles.balance}>
@@ -84,7 +126,8 @@ export const Form: React.FC = observer(() => {
                             className={styles.bigInput}
                             addonAfter="USDT"
                             value={deposit.position}
-                            onChange={onChangeFn(deposit.setPosition)}
+                            onChange={positionField.onChange}
+                            onBlur={positionField.onBlur}
                             disabled={deposit.loading}
                         />
                     </Col>
@@ -98,7 +141,8 @@ export const Form: React.FC = observer(() => {
                                 prefix="x"
                                 className={styles.smallInput}
                                 value={deposit.leverage}
-                                onChange={onChangeFn(deposit.setLeverage)}
+                                onChange={leverageField.onChange}
+                                onBlur={leverageField.onBlur}
                                 disabled={deposit.loading}
                             />
                         </div>
@@ -106,10 +150,10 @@ export const Form: React.FC = observer(() => {
                         <Slider
                             className={styles.slider}
                             min={1}
-                            max={150}
+                            max={market.maxLeverage ? parseFloat(market.maxLeverage) : undefined}
                             onChange={onChangeSlider}
                             value={Number(deposit.leverage)}
-                            disabled={deposit.loading}
+                            disabled={deposit.loading || !market.maxLeverage}
                         />
                     </Col>
 
@@ -121,7 +165,8 @@ export const Form: React.FC = observer(() => {
                             prefix="%"
                             className={styles.smallInput}
                             value={deposit.slippage}
-                            onChange={onChangeFn(deposit.setSlippage)}
+                            onChange={slippageField.onChange}
+                            onBlur={slippageField.onBlur}
                             disabled={deposit.loading}
                         />
                     </Col>
@@ -135,12 +180,21 @@ export const Form: React.FC = observer(() => {
                             {price.price ? `$${new BigNumber(price.price).toFixed(2)}` : '\u200B'}
                         </Paragraph>
                     </Col>
+
+                    {deposit.isSpreadValid === false ? (
+                        <Typography.Text type="danger">Spread too high</Typography.Text>
+                    ) : deposit.isValid === false && gravix.minPositionCollateral ? (
+                        <Typography.Text type="danger">
+                            Min position — {decimalAmount(gravix.minPositionCollateral, 6)}$
+                        </Typography.Text>
+                    ) : null}
+
                     <Button
                         htmlType="submit"
                         style={{ width: '100%' }}
                         type="primary"
                         size="large"
-                        disabled={deposit.loading || !deposit.amountIsValid}
+                        disabled={deposit.loading || !deposit.isEnabled}
                         loading={deposit.loading}
                     >
                         {deposit.depositType === DepositType.Long ? 'Long' : 'Short'}

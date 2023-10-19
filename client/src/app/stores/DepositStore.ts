@@ -273,7 +273,7 @@ export class DepositStore {
             : undefined
     }
 
-    public get liquidationPrice(): string | undefined {
+    get liquidationPrice(): string | undefined {
         if (
             this.collateral &&
             this.openFee &&
@@ -315,8 +315,6 @@ export class DepositStore {
 
     get dynamicSpread(): string | undefined {
         const isLong = this.depositType === DepositType.Long
-
-        console.log(this.price.priceNormalized)
 
         return this.market.totalLongs &&
             this.positionNormalized &&
@@ -361,12 +359,33 @@ export class DepositStore {
             : undefined
     }
 
-    public get openPriceNormalized(): string | undefined {
+    get openPriceNormalized(): string | undefined {
         return this.openPrice ? normalizeAmount(this.openPrice, 8) : undefined
     }
 
     get slippageNormalized(): string | undefined {
         return this.state.slippage ? normalizePercent(this.state.slippage) : undefined
+    }
+
+    get isValid(): boolean | undefined {
+        if (this.collateral) {
+            return this.gravix.minPositionCollateral && this.collateralNormalized
+                ? new BigNumber(this.collateralNormalized).gte(this.gravix.minPositionCollateral)
+                : undefined
+        }
+        return undefined
+    }
+
+    get isSpreadValid(): boolean | undefined {
+        return this.price.price && this.liquidationPrice
+            ? this.depositType === DepositType.Long
+                ? new BigNumber(this.price.price).gt(this.liquidationPrice)
+                : new BigNumber(this.price.price).lt(this.liquidationPrice)
+            : undefined
+    }
+
+    get isEnabled(): boolean | undefined {
+        return this.isValid && this.amountIsValid && this.isSpreadValid === true
     }
 
     static async getAssetData(marketIdx: string, chainId: string): Promise<AssetData> {
