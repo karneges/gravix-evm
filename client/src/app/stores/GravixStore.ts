@@ -7,6 +7,7 @@ import { Gravix } from '../../assets/misc/index.js'
 import { Reactions } from '../utils/reactions.js'
 import { MarketInfo } from '../../types.js'
 import { IGravix } from '../../assets/misc/Gravix.js'
+import { lastOfCalls } from '../utils/last-of-calls.js'
 
 enum ETheme {
     DARK = 'dark',
@@ -19,12 +20,20 @@ type State = {
     markets: MarketInfo[]
 }
 
+const initialState: State = {
+    markets: [],
+}
+
 export class GravixStore {
-    protected state: State = {
-        markets: [],
-    }
+    protected state = initialState
 
     protected reactions = new Reactions()
+
+    readonly priceDecimals = 8
+
+    readonly baseNumber = 6
+
+    isDarkMode = false
 
     constructor(protected wallet: EvmWalletStore) {
         makeAutoObservable(
@@ -38,13 +47,17 @@ export class GravixStore {
         this.initTheme()
     }
 
-    readonly priceDecimals = 8
-    readonly baseNumber = 6
-
-    isDarkMode = false
-
     init() {
-        this.reactions.create(reaction(() => this.wallet.address, this.syncDetails, { fireImmediately: true }))
+        this.reactions.create(
+            reaction(() => this.wallet.address, this.initListener, { fireImmediately: true }),
+            reaction(() => this.wallet.address, this.syncData, { fireImmediately: true }),
+        )
+    }
+
+    dispose() {
+        this.reactions.destroy()
+        this.wallet.ethers?.off(this.event, this.onContract).catch(console.error)
+        this.state = initialState
     }
 
     initTheme() {
@@ -64,14 +77,30 @@ export class GravixStore {
             : localStorage.setItem('theme-type', ETheme.LIGHT)
     }
 
-    async syncDetails(): Promise<void> {
-        if (!this.wallet.provider) {
+    async initListener(): Promise<void> {
+        try {
+            await this.wallet.ethers?.off(this.event, this.onContract)
+            await this.wallet.ethers?.on(this.event, this.onContract)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    protected event = {
+        address: GravixVault,
+    }
+
+    protected onContract = lastOfCalls(() => {
+        this.syncData().catch(console.error)
+    }, 500)
+
+    async syncData(): Promise<void> {
+        if (!this.wallet.ethers) {
             return
         }
 
         try {
-            const provider = new ethers.BrowserProvider(this.wallet.provider)
-            const signer = await provider.getSigner()
+            const signer = await this.wallet.ethers.getSigner()
             const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
             const details = await gravix.getDetails()
             const markets = await gravix.getAllMarkets()

@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx'
 import { MetaMaskInpageProvider } from '@metamask/providers'
 import { Web3 } from 'web3'
+import { ethers } from 'ethers'
 
 type State = {
     chainId?: string
@@ -12,6 +13,8 @@ export class EvmWalletStore {
     protected state: State = {}
 
     public provider?: MetaMaskInpageProvider
+
+    public ethers?: ethers.BrowserProvider
 
     public web3?: Web3
 
@@ -32,6 +35,7 @@ export class EvmWalletStore {
             this.provider?.removeListener('disconnect', this.disconnect)
 
             this.provider = EvmWalletStore.getProvider()
+            this.ethers = new ethers.BrowserProvider(this.provider)
 
             this.provider.on('accountsChanged', this.syncData)
             this.provider.on('chainChanged', this.syncData)
