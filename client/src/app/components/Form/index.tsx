@@ -14,6 +14,7 @@ import { MarketStore } from '../../stores/MarketStore.js'
 import { decimalPercent } from '../../utils/gravix.js'
 import { GravixStore } from '../../stores/GravixStore.js'
 import { useAmountField } from '../../hooks/useAmountField.js'
+import { BalanceStore } from '../../stores/BalanceStore.js'
 
 const { Title, Paragraph } = Typography
 
@@ -22,6 +23,7 @@ export const Form: React.FC = observer(() => {
     const price = useStore(PriceStore)
     const market = useStore(MarketStore)
     const gravix = useStore(GravixStore)
+    const balance = useStore(BalanceStore)
 
     const items = [
         {
@@ -116,7 +118,7 @@ export const Form: React.FC = observer(() => {
                             disabled={deposit.loading}
                         />
                         <Typography.Text className={styles.balance}>
-                            Balance: {deposit.usdtBalance ? `${decimalAmount(deposit.usdtBalance, 6)} USDT` : ''}
+                            Balance: {balance.usdtBalance ? `${decimalAmount(balance.usdtBalance, 6)} USDT` : ''}
                         </Typography.Text>
                     </Col>
 
