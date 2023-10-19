@@ -1,8 +1,7 @@
 import { ethers, Contract, BaseContract } from 'ethers'
 import { notification } from 'antd'
-import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { comparer, makeAutoObservable, reaction, runInAction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
-import { GravixVault } from '../../config.js'
 import GravixAbi from '../../assets/abi/Gravix.json'
 import { Gravix } from '../../assets/misc/index.js'
 import { Reactions } from '../utils/reactions.js'
@@ -49,7 +48,10 @@ export class PositionsListStore {
 
     init() {
         this.reactions.create(
-            reaction(() => [this.evmWallet.address, this.evmWallet.chainId, this.market.idx], this.reload),
+            reaction(() => [this.evmWallet.address, this.market.idx, this.gravix.network], this.reload, {
+                fireImmediately: true,
+                equals: comparer.structural,
+            }),
         )
     }
 
@@ -60,12 +62,8 @@ export class PositionsListStore {
 
     dispose() {
         this.reactions.destroy()
-        this.provider?.off(this.event, this.onContract).catch(console.error)
+        this.provider?.removeAllListeners().catch(console.error)
         this.state = initialState
-    }
-
-    protected event = {
-        address: GravixVault,
     }
 
     protected onContract = lastOfCalls(() => {
@@ -74,8 +72,15 @@ export class PositionsListStore {
 
     async initListener(): Promise<void> {
         try {
-            await this.provider?.off(this.event, this.onContract)
-            await this.provider?.on(this.event, this.onContract)
+            await this.provider?.removeAllListeners()
+            if (this.gravix.network) {
+                await this.provider?.on(
+                    {
+                        address: this.gravix.network.GravixVault,
+                    },
+                    this.onContract,
+                )
+            }
         } catch (e) {
             console.error(e)
         }
@@ -84,11 +89,15 @@ export class PositionsListStore {
     async initApp() {
         const assetData = await this.market.loadAssetData()
 
-        if (!this.evmWallet.provider || !this.evmWallet.address || !assetData) return
+        if (!this.evmWallet.provider || !this.evmWallet.address || !assetData || !this.gravix.network) return
         this.provider = new ethers.BrowserProvider(this.evmWallet.provider)
 
         const signer = await this.provider.getSigner()
-        const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+        const gravixContract = new Contract(
+            this.gravix.network.GravixVault,
+            GravixAbi.abi,
+            signer,
+        ) as BaseContract as Gravix
 
         const position = await gravixContract.getUserPositions(this.evmWallet.address)
 
@@ -123,7 +132,7 @@ export class PositionsListStore {
     }
 
     async closePos(key: string) {
-        if (!this.evmWallet.provider || !this.evmWallet.address) return
+        if (!this.evmWallet.provider || !this.evmWallet.address || !this.gravix.network) return
 
         runInAction(() => {
             this.state.closeLoading[key] = true
@@ -132,7 +141,11 @@ export class PositionsListStore {
         try {
             const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
             const signer = await browserProvider.getSigner()
-            const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+            const gravixContract = new Contract(
+                this.gravix.network.GravixVault,
+                GravixAbi.abi,
+                signer,
+            ) as BaseContract as Gravix
             const assetData = await this.market.loadAssetData()
 
             if (!assetData) {

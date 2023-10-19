@@ -1,7 +1,7 @@
-import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { comparer, makeAutoObservable, reaction, runInAction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import { ethers } from 'ethers'
-import { GravixVault, defaultChainId, networks } from '../../config.js'
+import { defaultChainId, networks } from '../../config.js'
 import GravixAbi from '../../assets/abi/Gravix.json'
 import { Gravix } from '../../assets/misc/index.js'
 import { Reactions } from '../utils/reactions.js'
@@ -53,14 +53,17 @@ export class GravixStore {
 
     init() {
         this.reactions.create(
-            reaction(() => [this.wallet.address, this.wallet.chainId], this.syncData, { fireImmediately: true }),
+            reaction(() => [this.wallet.address, this.network], this.syncData, {
+                fireImmediately: true,
+                equals: comparer.structural,
+            }),
             reaction(() => this.wallet.chainId, this.syncChainId, { fireImmediately: true }),
         )
     }
 
     dispose() {
         this.reactions.destroy()
-        this.provider?.off(this.event, this.onContract).catch(console.error)
+        this.provider?.removeAllListeners().catch(console.error)
         this.state = initialState
     }
 
@@ -87,15 +90,18 @@ export class GravixStore {
 
     async initListener(): Promise<void> {
         try {
-            await this.provider?.off(this.event, this.onContract)
-            await this.provider?.on(this.event, this.onContract)
+            await this.provider?.removeAllListeners()
+            if (this.network) {
+                await this.provider?.on(
+                    {
+                        address: this.network.GravixVault,
+                    },
+                    this.onContract,
+                )
+            }
         } catch (e) {
             console.error(e)
         }
-    }
-
-    protected event = {
-        address: GravixVault,
     }
 
     protected onContract = lastOfCalls(() => {
@@ -107,11 +113,15 @@ export class GravixStore {
             minPositionCollateral: bigint,
             markets: MarketInfo[] = []
 
-        if (this.wallet.provider) {
+        if (this.wallet.provider && this.network) {
             try {
                 this.provider = new ethers.BrowserProvider(this.wallet.provider)
                 const signer = await this.provider.getSigner()
-                const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+                const gravix = new ethers.Contract(
+                    this.network.GravixVault,
+                    GravixAbi.abi,
+                    signer,
+                ) as ethers.BaseContract as Gravix
                 const details = await gravix.getDetails()
                 const _markets = await gravix.getAllMarkets()
 
@@ -165,6 +175,16 @@ export class GravixStore {
 
     get chainId(): number {
         return this.state.chainId
+    }
+
+    get network(): (typeof networks)[number] | undefined {
+        const network = networks.find(item => item.chainId === this.chainId)
+
+        if (network && network.chainId === this.wallet.chainId) {
+            return network
+        }
+
+        return undefined
     }
 }
 

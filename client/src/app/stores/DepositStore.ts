@@ -10,7 +10,6 @@ import { PriceStore } from './PriceStore.js'
 import { GravixStore } from './GravixStore.js'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { normalizePercent } from '../utils/mix.js'
-import { GravixVault, UsdtToken } from '../../config.js'
 import { approveTokens, mapIdxToTicker, normalizeLeverage } from '../utils/gravix.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { MarketStore } from './MarketStore.js'
@@ -144,9 +143,17 @@ export class DepositStore {
                 throw new Error('market.idx must be defined')
             }
 
+            if (!this.gravix.network) {
+                throw new Error('gravix.network must be defined')
+            }
+
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
-            gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+            gravix = new ethers.Contract(
+                this.gravix.network.GravixVault,
+                GravixAbi.abi,
+                signer,
+            ) as ethers.BaseContract as Gravix
             const assetData = await this.market.loadAssetData()
 
             if (!assetData) {
@@ -154,9 +161,9 @@ export class DepositStore {
             }
 
             await approveTokens(
-                UsdtToken,
+                this.gravix.network.UsdtToken,
                 this.wallet.address,
-                GravixVault,
+                this.gravix.network.GravixVault,
                 this.collateralNormalized,
                 this.wallet.provider,
             )
