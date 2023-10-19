@@ -14,7 +14,7 @@ import { FullPositionData, PositionViewData, TGravixPosition, WithoutArr } from 
 import { lastOfCalls } from '../utils/last-of-calls.js'
 import { mapIdxToTicker } from '../utils/gravix.js'
 import { BalanceStore } from './BalanceStore.js'
-import { MarketStatsStore } from './MarketStatsStore.js'
+import { MarketStore } from './MarketStore.js'
 
 type State = {
     marketOrders?: WithoutArr<TGravixPosition>[]
@@ -36,7 +36,7 @@ export class PositionsListStore {
         protected evmWallet: EvmWalletStore,
         protected gravix: GravixStore,
         protected balance: BalanceStore,
-        protected marketStats: MarketStatsStore,
+        protected market: MarketStore,
     ) {
         makeAutoObservable(
             this,
@@ -82,9 +82,14 @@ export class PositionsListStore {
     }
 
     async initApp() {
-        if (!this.evmWallet.provider || !this.evmWallet.address || !this.marketStats.marketAssetData) return
+        if (!this.evmWallet.provider || !this.evmWallet.address) return
         this.provider = new ethers.BrowserProvider(this.evmWallet.provider)
-        const assetData = this.marketStats.marketAssetData
+        const assetData = await this.market.loadAssetData()
+
+        if (!assetData) {
+            throw new Error('no asset data')
+        }
+
         const signer = await this.provider.getSigner()
         const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
 
@@ -121,7 +126,7 @@ export class PositionsListStore {
     }
 
     async closePos(key: string) {
-        if (!this.evmWallet.provider || !this.evmWallet.address || !this.marketStats.marketAssetData) return
+        if (!this.evmWallet.provider || !this.evmWallet.address) return
 
         runInAction(() => {
             this.state.closeLoading[key] = true
@@ -131,6 +136,11 @@ export class PositionsListStore {
             const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
             const signer = await browserProvider.getSigner()
             const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+            const assetData = await this.market.loadAssetData()
+
+            if (!assetData) {
+                throw new Error('no asset data')
+            }
 
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravixContract!
@@ -151,13 +161,7 @@ export class PositionsListStore {
                     .catch(reject)
             })
 
-            await gravixContract.closeMarketPosition(
-                0,
-                key,
-                this.marketStats.marketAssetData.price,
-                this.marketStats.marketAssetData.timestamp,
-                this.marketStats.marketAssetData.signature,
-            )
+            await gravixContract.closeMarketPosition(0, key, assetData.price, assetData.timestamp, assetData.signature)
 
             await successListener
         } catch (e) {

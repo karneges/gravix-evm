@@ -144,14 +144,14 @@ export class DepositStore {
                 throw new Error('market.idx must be defined')
             }
 
-            if (!this.marketStats.marketAssetData) {
-                throw new Error('marketAssetData not defined')
-            }
-
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
             gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
-            const assetData = this.marketStats.marketAssetData
+            const assetData = await this.market.loadAssetData()
+
+            if (!assetData) {
+                throw new Error('assetData empty')
+            }
 
             await approveTokens(
                 UsdtToken,
