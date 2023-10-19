@@ -14,6 +14,7 @@ import { FullPositionData, PositionViewData, TGravixPosition, WithoutArr } from 
 import { lastOfCalls } from '../utils/last-of-calls.js'
 import { mapIdxToTicker } from '../utils/gravix.js'
 import { BalanceStore } from './BalanceStore.js'
+import { MarketStatsStore } from './MarketStatsStore.js'
 
 type State = {
     marketOrders?: WithoutArr<TGravixPosition>[]
@@ -35,6 +36,7 @@ export class PositionsListStore {
         protected evmWallet: EvmWalletStore,
         protected gravix: GravixStore,
         protected balance: BalanceStore,
+        protected marketStats: MarketStatsStore,
     ) {
         makeAutoObservable(
             this,
@@ -46,7 +48,14 @@ export class PositionsListStore {
     }
 
     init() {
-        this.reactions.create(reaction(() => [this.evmWallet.address], this.initApp, { fireImmediately: true }))
+        this.reactions.create(
+            reaction(() => [this.evmWallet.address, this.evmWallet.chainId], this.reload, { fireImmediately: true }),
+        )
+    }
+
+    reload() {
+        this.state = initialState
+        this.initApp().catch(console.error)
     }
 
     dispose() {
@@ -73,26 +82,15 @@ export class PositionsListStore {
     }
 
     async initApp() {
-        if (!this.evmWallet.provider || !this.evmWallet.address) return
+        if (!this.evmWallet.provider || !this.evmWallet.address || !this.marketStats.marketAssetData) return
         this.provider = new ethers.BrowserProvider(this.evmWallet.provider)
+        const assetData = this.marketStats.marketAssetData
         const signer = await this.provider.getSigner()
         const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
 
         const position = await gravixContract.getUserPositions(this.evmWallet.address)
 
         const filteredPositions = position.filter(_ => (_[1].createdAt.toString() !== '0' ? true : false))
-        const assetData = await (
-            await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    marketIdx: 0,
-                    chainId: 59140,
-                }),
-            })
-        ).json()
         const address = this.evmWallet.address
 
         const positionsView = await Promise.all(
@@ -123,7 +121,7 @@ export class PositionsListStore {
     }
 
     async closePos(key: string) {
-        if (!this.evmWallet.provider || !this.evmWallet.address) return
+        if (!this.evmWallet.provider || !this.evmWallet.address || !this.marketStats.marketAssetData) return
 
         runInAction(() => {
             this.state.closeLoading[key] = true
@@ -133,19 +131,6 @@ export class PositionsListStore {
             const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
             const signer = await browserProvider.getSigner()
             const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
-
-            const assetData = await (
-                await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        marketIdx: 0,
-                        chainId: 59140,
-                    }),
-                })
-            ).json()
 
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravixContract!
@@ -166,7 +151,13 @@ export class PositionsListStore {
                     .catch(reject)
             })
 
-            await gravixContract.closeMarketPosition(0, key, assetData.price, assetData.timestamp, assetData.signature)
+            await gravixContract.closeMarketPosition(
+                0,
+                key,
+                this.marketStats.marketAssetData.price,
+                this.marketStats.marketAssetData.timestamp,
+                this.marketStats.marketAssetData.signature,
+            )
 
             await successListener
         } catch (e) {
