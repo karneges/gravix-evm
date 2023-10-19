@@ -82,7 +82,7 @@ export const PositionsContent: React.FC = observer(() => {
                 ),
             },
             {
-                title: 'Liquidation price',
+                title: 'Liq. price',
                 dataIndex: '',
                 key: 'liquidation',
                 render: (_: any, item: TGravixPosition, index: number) => (
