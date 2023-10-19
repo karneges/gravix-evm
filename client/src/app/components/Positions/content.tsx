@@ -11,16 +11,15 @@ import { GravixStore } from '../../stores/GravixStore.js'
 import { decimalAmount } from '../../utils/decimal-amount.js'
 import { PositionItemClose } from './Close/index.js'
 import { PositionItemType } from './PositionItemType/index.js'
-import { MarketStore } from '../../stores/MarketStore.js'
 import { NetValueInfoProvider } from './NetValueInfo/index.js'
 import { TGravixPosition } from '../../../types.js'
+import { mapIdxToTicker } from '../../utils/gravix.js'
 
 const { Title } = Typography
 
 export const PositionsContent: React.FC = observer(() => {
     const positionsList = useStore(PositionsListStore)
     const gravix = useStore(GravixStore)
-    const market = useStore(MarketStore)
 
     const columns = useMemo(
         () => [
@@ -60,10 +59,10 @@ export const PositionsContent: React.FC = observer(() => {
                 key: 'positionType',
                 render: (_: any, item: TGravixPosition) => (
                     <>
-                        {market.market?.ticker ? (
+                        {item.marketIdx !== undefined ? (
                             <PositionItemType
                                 leverage={item.leverage.toString()}
-                                symbol={market.market?.ticker}
+                                symbol={mapIdxToTicker(item.marketIdx.toString())}
                                 type={item.positionType.toString()}
                             />
                         ) : null}
@@ -106,10 +105,10 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Liq. price',
                 dataIndex: '',
                 key: 'liquidation',
-                render: (_: any, item: TGravixPosition, index: number) => (
+                render: (_: any, item: TGravixPosition) => (
                     <span>
                         {decimalAmount(
-                            positionsList.positionsViewById[index]?.liquidationPrice?.toString() ?? '0',
+                            positionsList.positionsViewById[item.index]?.liquidationPrice?.toString() ?? '0',
                             gravix.priceDecimals,
                             0,
                         )}
@@ -124,7 +123,7 @@ export const PositionsContent: React.FC = observer(() => {
                 render: (_: any, item: TGravixPosition) => <PositionItemClose index={item.index} />,
             },
         ],
-        [],
+        [positionsList, gravix.baseNumber, gravix.priceDecimals],
     )
 
     return (
