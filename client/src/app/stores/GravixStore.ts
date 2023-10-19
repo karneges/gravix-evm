@@ -10,8 +10,8 @@ import { IGravix } from '../../assets/misc/Gravix.js'
 import { lastOfCalls } from '../utils/last-of-calls.js'
 
 enum ETheme {
-    DARK = 'dark',
-    LIGHT = 'light',
+    DARK = 'dark-theme',
+    LIGHT = 'light-theme',
 }
 
 type State = {
@@ -67,11 +67,13 @@ export class GravixStore {
     initTheme() {
         const themeType = localStorage.getItem('theme-type')
         if (themeType === ETheme.DARK) this.toggleTheme(true)
+        document.body.className = this.isDarkMode ? ETheme.DARK : ETheme.LIGHT
     }
 
     toggleTheme(isDark?: boolean) {
         if (isDark) {
             this.isDarkMode = true
+            document.body.className = ETheme.DARK
             return
         }
         this.isDarkMode = !this.isDarkMode
@@ -79,6 +81,8 @@ export class GravixStore {
         this.isDarkMode
             ? localStorage.setItem('theme-type', ETheme.DARK)
             : localStorage.setItem('theme-type', ETheme.LIGHT)
+
+        document.body.className = this.isDarkMode ? ETheme.DARK : ETheme.LIGHT
     }
 
     async initListener(): Promise<void> {

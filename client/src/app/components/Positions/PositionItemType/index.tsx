@@ -11,7 +11,6 @@ type Props = {
     leverage: string
     type: string
 }
-
 export function PositionItemType({ symbol, leverage, type }: Props): JSX.Element {
     const leverageFormatted = React.useMemo(
         () => (leverage ? formattedAmount(decimalAmount(leverage, 6)) : undefined),
@@ -23,7 +22,7 @@ export function PositionItemType({ symbol, leverage, type }: Props): JSX.Element
             {symbol}
 
             <div className={styles.root}>
-                {leverageFormatted && <span className={styles.x}>x{leverageFormatted}</span>}
+                {leverageFormatted && <span>x{leverageFormatted}</span>}
                 {type && (
                     <span
                         className={classNames({

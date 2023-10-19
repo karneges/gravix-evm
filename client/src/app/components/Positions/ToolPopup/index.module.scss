@@ -2,7 +2,7 @@
     position: relative;
     z-index: 2;
     padding: 6px 8px;
-    background: #1B1E37;
+    background: #1b1e37;
     border-radius: 6px;
     font-size: 12px;
     line-height: 16px;
@@ -11,5 +11,11 @@
         background: rgba(255, 255, 255, 0.16);
         -webkit-backdrop-filter: blur(16px);
         backdrop-filter: blur(16px);
+    }
+}
+
+:global(.light-theme) {
+    .toolPopup {
+        background: #000000b6;
     }
 }
