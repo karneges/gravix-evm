@@ -82,14 +82,10 @@ export class PositionsListStore {
     }
 
     async initApp() {
-        if (!this.evmWallet.provider || !this.evmWallet.address) return
-        this.provider = new ethers.BrowserProvider(this.evmWallet.provider)
         const assetData = await this.market.loadAssetData()
-        console.log(assetData, 'ASSET')
 
-        if (!assetData) {
-            throw new Error('no asset data')
-        }
+        if (!this.evmWallet.provider || !this.evmWallet.address || !assetData) return
+        this.provider = new ethers.BrowserProvider(this.evmWallet.provider)
 
         const signer = await this.provider.getSigner()
         const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
