@@ -61,7 +61,9 @@ export class DepositStore {
             },
         )
 
-        this.reactions.create(reaction(() => this.wallet.address, this.syncUsdtBalance, { fireImmediately: true }))
+        this.reactions.create(
+            reaction(() => [this.wallet.address, this.wallet.chainId], this.syncUsdtBalance, { fireImmediately: true }),
+        )
     }
 
     setType(val: DepositType): void {
@@ -161,10 +163,14 @@ export class DepositStore {
                 throw new Error('slippageNormalized must be defined')
             }
 
+            if (!this.market.idx) {
+                throw new Error('market.idx must be defined')
+            }
+
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
             gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
-            const assetData = await DepositStore.getAssetData(this.market.idx, '59140')
+            const assetData = await DepositStore.getAssetData(this.market.idx, this.gravix.chainId)
 
             await approveTokens(
                 UsdtToken,
@@ -388,7 +394,7 @@ export class DepositStore {
         return this.isValid && this.amountIsValid && this.isSpreadValid === true
     }
 
-    static async getAssetData(marketIdx: string, chainId: string): Promise<AssetData> {
+    static async getAssetData(marketIdx: string, chainId: number): Promise<AssetData> {
         const data = await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
             method: 'POST',
             headers: {

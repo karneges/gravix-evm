@@ -4,12 +4,10 @@ import { decimalLeverage, decimalPercent } from '../utils/gravix.js'
 import { GravixStore } from './GravixStore.js'
 
 type State = {
-    idx: string
+    idx?: string
 }
 
-const initialState: State = {
-    idx: '0',
-}
+const initialState: State = {}
 
 export class MarketStore {
     protected state = initialState
@@ -28,12 +26,12 @@ export class MarketStore {
         this.state.idx = val
     }
 
-    get idx(): string {
-        return this.state.idx
+    get idx(): string | undefined {
+        return this.state.idx ?? this.gravix.markets[0]?.marketIdx.toString()
     }
 
     get market(): MarketInfo | undefined {
-        return this.gravix.byIdx[this.idx]
+        return this.idx ? this.gravix.byIdx[this.idx] : undefined
     }
 
     get totalLongs(): string | undefined {

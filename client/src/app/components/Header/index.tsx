@@ -29,33 +29,18 @@ export const Header = observer(() => {
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <EvmWallet />
 
-                    {gravixStore.isDarkMode ? (
-                        <Button
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginLeft: '20px',
-                            }}
-                            onClick={() => gravixStore.toggleTheme()}
-                            type="primary"
-                            shape="circle"
-                            icon={<IoMoonOutline />}
-                        />
-                    ) : (
-                        <Button
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginLeft: '20px',
-                            }}
-                            onClick={() => gravixStore.toggleTheme()}
-                            type="primary"
-                            shape="circle"
-                            icon={<IoSunny />}
-                        />
-                    )}
+                    <Button
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginLeft: '20px',
+                        }}
+                        onClick={() => gravixStore.toggleTheme()}
+                        type="primary"
+                        shape="circle"
+                        icon={gravixStore.isDarkMode ? <IoMoonOutline /> : <IoSunny />}
+                    />
                 </div>
             </Row>
         </Layout.Header>
