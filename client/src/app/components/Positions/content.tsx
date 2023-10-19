@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 
 import styles from './index.module.scss'
 import { useStore } from '../../hooks/useStore.js'
-import { PositionsListStore, TGravixPosition } from '../../stores/PositionsListStore.js'
+import { PositionsListStore } from '../../stores/PositionsListStore.js'
 import { observer } from 'mobx-react-lite'
 import { Typography, Table } from 'antd'
 import { formatDate } from '../../utils/format-date.js'
@@ -13,6 +13,7 @@ import { PositionItemClose } from './Close/index.js'
 import { PositionItemType } from './PositionItemType/index.js'
 import { MarketStore } from '../../stores/MarketStore.js'
 import { NetValueInfoProvider } from './NetValueInfo/index.js'
+import { TGravixPosition } from '../../../types.js'
 
 const { Title } = Typography
 
@@ -20,33 +21,6 @@ export const PositionsContent: React.FC = observer(() => {
     const positionsList = useStore(PositionsListStore)
     const gravix = useStore(GravixStore)
     const market = useStore(MarketStore)
-    // const price = useStore(PriceStore)
-
-    // interface EditableCellProps extends React.HTMLAttributes<HTMLElement> {
-    //     editing: boolean
-    //     dataIndex: string
-    //     title: any
-    //     inputType: 'number' | 'text'
-    //     record: TGravixPosition
-    //     index: number
-    //     children: React.ReactNode
-    // }
-
-    // const EditableRow: React.FC<EditableCellProps> = ({ record, children, ...restProps }) => {
-    //     console.log(restProps, 'restProps')
-    //     if (record?.index) {
-    //         // eslint-disable-next-line react-hooks/rules-of-hooks
-    //         const PositionProvider = useProvider(PositionStore, gravix, market, price, positionsList, record.index)
-
-    //         return (
-    //             <tr {...restProps}>
-    //                 <PositionProvider>{children}</PositionProvider>
-    //             </tr>
-    //         )
-    //     }
-
-    //     return <tr {...restProps}>{children}</tr>
-    // }
 
     const columns = useMemo(
         () => [
@@ -135,7 +109,7 @@ export const PositionsContent: React.FC = observer(() => {
                 render: (_: any, item: TGravixPosition, index: number) => (
                     <span>
                         {decimalAmount(
-                            positionsList.allUserViewPositions[index].liquidationPrice.toString(),
+                            positionsList.positionsViewById[index]?.liquidationPrice?.toString() ?? '0',
                             gravix.priceDecimals,
                             0,
                         )}
@@ -157,11 +131,6 @@ export const PositionsContent: React.FC = observer(() => {
         <div className={styles.positions}>
             <Title level={3}>Positions</Title>
             <Table
-                // components={{
-                //     body: {
-                //         row: EditableRow,
-                //     },
-                // }}
                 dataSource={positionsList.allUserPositions}
                 columns={columns}
                 loading={false}

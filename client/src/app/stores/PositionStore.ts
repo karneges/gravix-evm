@@ -1,4 +1,4 @@
-import { makeAutoObservable } from 'mobx'
+import { makeAutoObservable, reaction } from 'mobx'
 import { BigNumber } from 'bignumber.js'
 import {
     calcCollateral,
@@ -10,19 +10,22 @@ import {
     calcPnlAfterFeesPercent,
 } from './utils/index.js'
 import { decimalLeverage } from '../utils/gravix.js'
-import { PositionsListStore, WithoutArr } from './PositionsListStore.js'
+import { PositionsListStore } from './PositionsListStore.js'
 import { PriceStore } from './PriceStore.js'
 import { MarketStore } from './MarketStore.js'
 import { GravixStore } from './GravixStore.js'
 import { IGravix } from '../../assets/misc/Gravix.js'
+import { WithoutArr } from '../../types.js'
+import { Reactions } from '../utils/reactions.js'
 
 type State = {
     funding?: any
-    positionView?: any
+    positionView?: WithoutArr<IGravix.PositionViewStructOutput>
 }
 
 export class PositionStore {
     protected state: State = {}
+    protected reactions = new Reactions()
 
     constructor(
         protected gravix: GravixStore,
@@ -38,6 +41,14 @@ export class PositionStore {
                 autoBind: true,
             },
         )
+
+        this.reactions.create(
+            reaction(() => [this.positions.allUserPositions.length], this.init, { fireImmediately: true }),
+        )
+    }
+
+    init() {
+        this.state.positionView = this.positions.positionsViewById[this.positionIdx]
     }
 
     public dispose(): void {
@@ -49,16 +60,14 @@ export class PositionStore {
     }
 
     public get leverage(): string | undefined {
-        console.log(this.position, 'POSITIONleverage')
-        return this.position ? decimalLeverage(this.position.leverage.toString()) : undefined
+        return this.position ? decimalLeverage(this.position.leverage?.toString()) : undefined
     }
 
     public get type(): string | undefined {
-        return this.position?.positionType.toString()
+        return this.position?.positionType?.toString()
     }
 
     public get netValue(): string | undefined {
-        console.log(this.initialCollateral, 'initialCollateral')
         return this.initialCollateral && this.openFee && this.borrowFee && this.fundingFee && this.limitedPnl
             ? calcNetValue(this.initialCollateral, this.openFee, this.borrowFee, this.fundingFee, this.limitedPnl)
             : undefined
@@ -94,23 +103,22 @@ export class PositionStore {
     }
 
     public get size(): string | undefined {
-        return this.state.positionView?.positionSizeUSD
+        return this.state.positionView?.positionSizeUSD?.toString()
     }
 
     public get collateral(): string | undefined {
-        console.log(this.position, 'this.position')
         return this.position && this.position.openFee
-            ? calcCollateral(this.position.initialCollateral.toString(), this.position.openFee.toString())
+            ? calcCollateral(this.position.initialCollateral?.toString(), this.position.openFee?.toString())
             : undefined
     }
 
     public get fundingFee(): string | undefined {
-        return this.state.positionView?.fundingFee
+        return this.state.positionView?.fundingFee?.toString()
     }
 
     public get fundingFeeInverted(): string | undefined {
         return this.state.positionView?.fundingFee
-            ? new BigNumber(this.state.positionView.fundingFee).times(-1).toFixed()
+            ? new BigNumber(this.state.positionView.fundingFee?.toString()).times(-1).toFixed()
             : undefined
     }
 
@@ -119,7 +127,7 @@ export class PositionStore {
             ? new BigNumber(this.openFee)
                   .plus(this.closeFee)
                   .plus(this.borrowFee)
-                  .plus(this.state.positionView.fundingFee)
+                  .plus(this.state.positionView.fundingFee?.toString())
                   .toFixed()
             : undefined
     }
@@ -134,7 +142,7 @@ export class PositionStore {
                   this.limitedPnl,
                   this.openFee,
                   this.borrowFee,
-                  this.state.positionView.fundingFee,
+                  this.state.positionView.fundingFee?.toString(),
                   this.initialCollateral,
               )
             : undefined
@@ -147,7 +155,7 @@ export class PositionStore {
     }
 
     public get borrowFee(): string | undefined {
-        return this.state.positionView?.borrowFee
+        return this.state.positionView?.borrowFee?.toString()
     }
 
     public get borrowFeeInverted(): string | undefined {
@@ -155,7 +163,7 @@ export class PositionStore {
     }
 
     public get closeFee(): string | undefined {
-        return this.state.positionView?.closeFee
+        return this.state.positionView?.closeFee?.toString()
     }
 
     public get closeFeeInverted(): string | undefined {
@@ -163,16 +171,15 @@ export class PositionStore {
     }
 
     public get closePrice(): string | undefined {
-        return this.state.positionView?.closePrice
+        return this.state.positionView?.closePrice?.toString()
     }
 
     public get initialCollateral(): string | undefined {
-        console.log(this.positions, 'initialCollateral')
-        return this.position?.initialCollateral.toString()
+        return this.position?.initialCollateral?.toString()
     }
 
     public get pnl(): string | undefined {
-        return this.state.positionView?.pnl
+        return this.state.positionView ? this.state.positionView.pnl.toString() : undefined
     }
 
     public get limitedPnl(): string | undefined {
@@ -192,11 +199,11 @@ export class PositionStore {
     }
 
     public get openPrice(): string | undefined {
-        return this.position?.openPrice.toString()
+        return this.position?.openPrice?.toString()
     }
 
     public get openFee(): string | undefined {
-        return this.position?.openFee.toString()
+        return this.position?.openFee?.toString()
     }
 
     public get openFeeInverted(): string | undefined {
@@ -204,14 +211,14 @@ export class PositionStore {
     }
 
     public get liquidationPrice(): string | undefined {
-        return this.state.positionView?.liquidationPrice
+        return this.state.positionView?.liquidationPrice?.toString()
     }
 
     public get marketIdx(): string | undefined {
-        return this.market.market?.marketIdx.toString() ?? undefined
+        return this.market.market?.marketIdx?.toString() ?? undefined
     }
 
     public get createdAt(): number | undefined {
-        return this.position?.createdAt ? parseInt(this.position.createdAt.toString(), 10) : undefined
+        return this.position?.createdAt ? parseInt(this.position.createdAt?.toString(), 10) : undefined
     }
 }

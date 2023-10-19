@@ -9,19 +9,12 @@ import { IGravix } from '../../assets/misc/Gravix.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { GravixStore } from './GravixStore.js'
 import { BigNumber } from 'bignumber.js'
-
-export type WithoutArr<T> = {
-    [Key in {
-        [key in keyof T]: key extends keyof Array<any> ? never : key extends `${number}` ? never : key
-    }[keyof T]]: T[Key]
-}
-
-export type TGravixPosition = WithoutArr<IGravix.PositionStructOutput> & { index: string }
+import { FullPositionData, PositionViewData, TGravixPosition, WithoutArr } from '../../types.js'
 
 type State = {
     marketOrders?: WithoutArr<TGravixPosition>[]
-    marketOrdersFull?: WithoutArr<IGravix.UserPositionInfoStructOutput>[]
-    marketOrdersPosView?: WithoutArr<IGravix.PositionViewStructOutput>[]
+    marketOrdersFull?: FullPositionData[]
+    marketOrdersPosView?: PositionViewData[]
 }
 
 export class PositionsListStore {
@@ -77,7 +70,6 @@ export class PositionsListStore {
                         accShortUSDFundingPerShare: 0,
                     },
                 })
-                console.log(position, 'positionsView')
 
                 return position
             }),
@@ -85,23 +77,15 @@ export class PositionsListStore {
 
         runInAction(() => {
             this.state.marketOrders = filteredPositions.map(_ => mapPosition(_, _[0].toString()))
-            this.state.marketOrdersFull = filteredPositions.map(_ => {
-                return {
-                    position: mapPosition(_, _[0].toString()),
-                    positionIdx: [_[0]],
-                }
-            }) as any
-            // positionKey: BigNumberish;
-            // user: AddressLike;
-            // assetPrice: BigNumberish;
-            // funding: IGravix.FundingStruct;
-            this.state.marketOrdersPosView = positionsView.map(mapPositionView)
+            this.state.marketOrdersFull = filteredPositions.map(_ => mapFullPosition(_))
+            this.state.marketOrdersPosView = positionsView.map((_, i) =>
+                mapPositionView(_, filteredPositions[i][0].toString()),
+            )
         })
     }
 
     async closePos(key: string) {
         if (!this.evmWallet.provider || !this.evmWallet.address) return
-        console.log('333')
 
         try {
             const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
@@ -131,39 +115,62 @@ export class PositionsListStore {
 
     countSize(collateral: string, leverage: string) {
         const normLeverage = decimalAmount(leverage, this.gravix.baseNumber)
-        console.log(normLeverage, 'normLeverage')
         return new BigNumber(collateral)
             .times(normLeverage)
             .div(10 ** 6)
             .toFixed(2)
     }
 
-    public get allUserViewPositions(): WithoutArr<IGravix.PositionViewStructOutput>[] {
-        return this.state.marketOrdersPosView ?? []
-    }
-
     public get allUserPositions(): WithoutArr<TGravixPosition>[] {
         return this.state.marketOrders ?? []
     }
 
+    public get positionsViewById(): { [k: string]: WithoutArr<IGravix.PositionViewStructOutput> | undefined } {
+        return this.state.marketOrdersPosView ? Object.fromEntries(this.state.marketOrdersPosView as any) : {}
+    }
+
     public get positionsById(): { [k: string]: WithoutArr<TGravixPosition> | undefined } {
-        console.log(Object.fromEntries(this.state.marketOrdersFull as any), 'filteredPositionsfromEntries')
         return this.state.marketOrdersFull ? Object.fromEntries(this.state.marketOrdersFull as any) : {}
     }
 }
 
-const mapPositionView = (item: IGravix.PositionViewStructOutput): WithoutArr<IGravix.PositionViewStructOutput> => ({
-    position: item.position,
-    positionSizeUSD: item.positionSizeUSD,
-    closePrice: item.closePrice,
-    borrowFee: item.borrowFee,
-    fundingFee: item.fundingFee,
-    closeFee: item.closeFee,
-    liquidationPrice: item.liquidationPrice,
-    pnl: item.pnl,
-    liquidate: item.liquidate,
-    viewTime: item.viewTime,
-})
+const mapPositionView = (item: IGravix.PositionViewStructOutput, positionKey: string): PositionViewData => {
+    return {
+        '1': {
+            position: item.position,
+            positionSizeUSD: item.positionSizeUSD,
+            closePrice: item.closePrice,
+            borrowFee: item.borrowFee,
+            fundingFee: item.fundingFee,
+            closeFee: item.closeFee,
+            liquidationPrice: item.liquidationPrice,
+            pnl: item.pnl,
+            liquidate: item.liquidate,
+            viewTime: item.viewTime,
+        },
+        '0': positionKey,
+    }
+}
+const mapFullPosition = (item: IGravix.UserPositionInfoStructOutput): FullPositionData => {
+    return {
+        '1': {
+            accUSDFundingPerShare: item[1].accUSDFundingPerShare,
+            baseSpreadRate: item[1].baseSpreadRate,
+            borrowBaseRatePerHour: item[1].borrowBaseRatePerHour,
+            closeFeeRate: item[1].closeFeeRate,
+            createdAt: item[1].createdAt,
+            initialCollateral: item[1].initialCollateral,
+            leverage: item[1].leverage,
+            liquidationThresholdRate: item[1].liquidationThresholdRate,
+            marketIdx: item[1].marketIdx,
+            markPrice: item[1].markPrice,
+            openFee: item[1].openFee,
+            openPrice: item[1].openPrice,
+            positionType: item[1].positionType,
+        },
+        '0': item[0].toString(),
+    }
+}
 
 const mapPosition = (item: IGravix.UserPositionInfoStructOutput, index: string): TGravixPosition => {
     return {
