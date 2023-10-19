@@ -10,12 +10,43 @@ import { BigNumber } from 'bignumber.js'
 import { GravixStore } from '../../stores/GravixStore.js'
 import { decimalAmount } from '../../utils/decimal-amount.js'
 import { PositionItemClose } from './Close/index.js'
+import { PositionItemType } from './PositionItemType/index.js'
+import { MarketStore } from '../../stores/MarketStore.js'
+import { NetValueInfoProvider } from './NetValueInfo/index.js'
 
 const { Title } = Typography
 
 export const PositionsContent: React.FC = observer(() => {
     const positionsList = useStore(PositionsListStore)
     const gravix = useStore(GravixStore)
+    const market = useStore(MarketStore)
+    // const price = useStore(PriceStore)
+
+    // interface EditableCellProps extends React.HTMLAttributes<HTMLElement> {
+    //     editing: boolean
+    //     dataIndex: string
+    //     title: any
+    //     inputType: 'number' | 'text'
+    //     record: TGravixPosition
+    //     index: number
+    //     children: React.ReactNode
+    // }
+
+    // const EditableRow: React.FC<EditableCellProps> = ({ record, children, ...restProps }) => {
+    //     console.log(restProps, 'restProps')
+    //     if (record?.index) {
+    //         // eslint-disable-next-line react-hooks/rules-of-hooks
+    //         const PositionProvider = useProvider(PositionStore, gravix, market, price, positionsList, record.index)
+
+    //         return (
+    //             <tr {...restProps}>
+    //                 <PositionProvider>{children}</PositionProvider>
+    //             </tr>
+    //         )
+    //     }
+
+    //     return <tr {...restProps}>{children}</tr>
+    // }
 
     const columns = useMemo(
         () => [
@@ -42,11 +73,27 @@ export const PositionsContent: React.FC = observer(() => {
                 ),
             },
             {
+                title: 'Net value',
+                dataIndex: '',
+                key: 'netValue',
+                render: (_: any, item: TGravixPosition) => {
+                    return <NetValueInfoProvider index={item.index} />
+                },
+            },
+            {
                 title: 'Type',
                 dataIndex: 'positionType',
                 key: 'positionType',
                 render: (_: any, item: TGravixPosition) => (
-                    <span>{item.positionType.toString() === '0' ? 'Long' : 'Short'}</span>
+                    <>
+                        {market.market?.ticker ? (
+                            <PositionItemType
+                                leverage={item.leverage.toString()}
+                                symbol={market.market?.ticker}
+                                type={item.positionType.toString()}
+                            />
+                        ) : null}
+                    </>
                 ),
             },
             {
@@ -110,6 +157,11 @@ export const PositionsContent: React.FC = observer(() => {
         <div className={styles.positions}>
             <Title level={3}>Positions</Title>
             <Table
+                // components={{
+                //     body: {
+                //         row: EditableRow,
+                //     },
+                // }}
                 dataSource={positionsList.allUserPositions}
                 columns={columns}
                 loading={false}

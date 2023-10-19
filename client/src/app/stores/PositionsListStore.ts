@@ -20,6 +20,7 @@ export type TGravixPosition = WithoutArr<IGravix.PositionStructOutput> & { index
 
 type State = {
     marketOrders?: WithoutArr<TGravixPosition>[]
+    marketOrdersFull?: WithoutArr<IGravix.UserPositionInfoStructOutput>[]
     marketOrdersPosView?: WithoutArr<IGravix.PositionViewStructOutput>[]
 }
 
@@ -51,7 +52,6 @@ export class PositionsListStore {
         const position = await gravixContract.getUserPositions(this.evmWallet.address)
 
         const filteredPositions = position.filter(_ => (_[1].createdAt.toString() !== '0' ? true : false))
-        console.log(position, 'initApp')
         const assetData = await (
             await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
                 method: 'POST',
@@ -85,6 +85,12 @@ export class PositionsListStore {
 
         runInAction(() => {
             this.state.marketOrders = filteredPositions.map(_ => mapPosition(_, _[0].toString()))
+            this.state.marketOrdersFull = filteredPositions.map(_ => {
+                return {
+                    position: mapPosition(_, _[0].toString()),
+                    positionIdx: [_[0]],
+                }
+            }) as any
             // positionKey: BigNumberish;
             // user: AddressLike;
             // assetPrice: BigNumberish;
@@ -138,6 +144,11 @@ export class PositionsListStore {
 
     public get allUserPositions(): WithoutArr<TGravixPosition>[] {
         return this.state.marketOrders ?? []
+    }
+
+    public get positionsById(): { [k: string]: WithoutArr<TGravixPosition> | undefined } {
+        console.log(Object.fromEntries(this.state.marketOrdersFull as any), 'filteredPositionsfromEntries')
+        return this.state.marketOrdersFull ? Object.fromEntries(this.state.marketOrdersFull as any) : {}
     }
 }
 
