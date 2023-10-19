@@ -1,4 +1,4 @@
-import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { makeAutoObservable, runInAction } from 'mobx'
 import { notification } from 'antd'
 import { BigNumber } from 'bignumber.js'
 import { Reactions } from '../utils/reactions.js'
@@ -11,9 +11,10 @@ import { GravixStore } from './GravixStore.js'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { normalizePercent } from '../utils/mix.js'
 import { GravixVault, UsdtToken } from '../../config.js'
-import { approveTokens, getTokenBalance, mapIdxToTicker, normalizeLeverage } from '../utils/gravix.js'
+import { approveTokens, mapIdxToTicker, normalizeLeverage } from '../utils/gravix.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { MarketStore } from './MarketStore.js'
+import { BalanceStore } from './BalanceStore.js'
 
 export enum DepositType {
     Long = '0',
@@ -27,7 +28,6 @@ type AssetData = {
 }
 
 type State = {
-    usdtBalance?: string
     loading?: boolean
     depositType: DepositType
     leverage: string
@@ -52,6 +52,7 @@ export class DepositStore {
         protected price: PriceStore,
         protected gravix: GravixStore,
         protected market: MarketStore,
+        protected balance: BalanceStore,
     ) {
         makeAutoObservable(
             this,
@@ -59,10 +60,6 @@ export class DepositStore {
             {
                 autoBind: true,
             },
-        )
-
-        this.reactions.create(
-            reaction(() => [this.wallet.address, this.wallet.chainId], this.syncUsdtBalance, { fireImmediately: true }),
         )
     }
 
@@ -108,22 +105,6 @@ export class DepositStore {
             this.collateral && this.openFee && this.leverage
                 ? new BigNumber(this.collateral).minus(this.openFee).times(this.leverage).decimalPlaces(6).toString()
                 : undefined
-    }
-
-    async syncUsdtBalance(): Promise<void> {
-        let usdtBalance: string
-
-        try {
-            if (this.wallet.provider && this.wallet.address) {
-                usdtBalance = await getTokenBalance(UsdtToken, this.wallet.address, this.wallet.provider)
-            }
-        } catch (e) {
-            console.error(e)
-        }
-
-        runInAction(() => {
-            this.state.usdtBalance = usdtBalance
-        })
     }
 
     async submit(): Promise<void> {
@@ -219,7 +200,7 @@ export class DepositStore {
         }
 
         gravix?.removeAllListeners().catch(console.error)
-        await this.syncUsdtBalance()
+        await this.balance.syncUsdtBalance()
 
         runInAction(() => {
             this.state.collateral = success ? '' : this.collateral
@@ -233,10 +214,6 @@ export class DepositStore {
         return !!this.state.loading
     }
 
-    get usdtBalance(): string | undefined {
-        return this.state.usdtBalance
-    }
-
     get collateral(): string | undefined {
         return this.state.collateral
     }
@@ -246,8 +223,8 @@ export class DepositStore {
     }
 
     get amountIsValid(): boolean {
-        if (this.state.usdtBalance && this.collateralNormalized) {
-            return new BigNumber(this.state.usdtBalance).gte(this.collateralNormalized)
+        if (this.balance.usdtBalance && this.collateralNormalized) {
+            return new BigNumber(this.balance.usdtBalance).gte(this.collateralNormalized)
         }
 
         return false

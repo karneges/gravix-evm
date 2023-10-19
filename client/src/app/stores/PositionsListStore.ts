@@ -13,6 +13,7 @@ import { BigNumber } from 'bignumber.js'
 import { FullPositionData, PositionViewData, TGravixPosition, WithoutArr } from '../../types.js'
 import { lastOfCalls } from '../utils/last-of-calls.js'
 import { mapIdxToTicker } from '../utils/gravix.js'
+import { BalanceStore } from './BalanceStore.js'
 
 type State = {
     marketOrders?: WithoutArr<TGravixPosition>[]
@@ -33,6 +34,7 @@ export class PositionsListStore {
     constructor(
         protected evmWallet: EvmWalletStore,
         protected gravix: GravixStore,
+        protected balance: BalanceStore,
     ) {
         makeAutoObservable(
             this,
@@ -157,6 +159,7 @@ export class PositionsListStore {
                                 description: `${ticker} ${type} closed at $${price}`,
                                 placement: 'bottomRight',
                             })
+                            this.balance.syncUsdtBalance().catch(console.error)
                             resolve(true)
                         }
                     })
