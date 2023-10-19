@@ -9,7 +9,6 @@ import { MarketStore } from '../../stores/MarketStore.js'
 import { PriceStore } from '../../stores/PriceStore.js'
 import { EvmWalletStore } from '../../stores/EvmWalletStore.js'
 import { routes } from '../../routes/index.js'
-import { MarketsStore } from '../../stores/MarketsStore.js'
 import { MarketStatsStore } from '../../stores/MarketStatsStore.js'
 
 export const Root: React.FC = () => {
@@ -18,57 +17,52 @@ export const Root: React.FC = () => {
     return (
         <EvmWalletProvider>
             {evmWallet => {
-                const MarketsProvider = useProvider(MarketsStore, evmWallet)
                 const GravixProvider = useProvider(GravixStore, evmWallet)
                 return (
-                    <MarketsProvider>
-                        {markets => {
-                            const MarketProvider = useProvider(MarketStore, markets)
+                    <GravixProvider>
+                        {gravix => {
+                            const MarketProvider = useProvider(MarketStore, gravix)
                             return (
-                                <GravixProvider>
-                                    {gravix => (
-                                        <MarketProvider>
-                                            {market => {
-                                                const PriceProvider = useProvider(PriceStore, market)
-                                                return (
-                                                    <PriceProvider>
-                                                        {price => {
-                                                            const MarketStatsProvider = useProvider(
-                                                                MarketStatsStore,
-                                                                price,
-                                                                market,
-                                                            )
-                                                            const DepositProvider = useProvider(
-                                                                DepositStore,
-                                                                evmWallet,
-                                                                price,
-                                                                gravix,
-                                                                market,
-                                                            )
+                                <MarketProvider>
+                                    {market => {
+                                        const PriceProvider = useProvider(PriceStore, market)
+                                        return (
+                                            <PriceProvider>
+                                                {price => {
+                                                    const MarketStatsProvider = useProvider(
+                                                        MarketStatsStore,
+                                                        price,
+                                                        market,
+                                                    )
+                                                    const DepositProvider = useProvider(
+                                                        DepositStore,
+                                                        evmWallet,
+                                                        price,
+                                                        gravix,
+                                                        market,
+                                                    )
 
-                                                            return (
-                                                                <MarketStatsProvider>
-                                                                    <DepositProvider>
-                                                                        <Router>
-                                                                            <Switch>
-                                                                                <Route path={routes.main}>
-                                                                                    <RootContent />
-                                                                                </Route>
-                                                                            </Switch>
-                                                                        </Router>
-                                                                    </DepositProvider>
-                                                                </MarketStatsProvider>
-                                                            )
-                                                        }}
-                                                    </PriceProvider>
-                                                )
-                                            }}
-                                        </MarketProvider>
-                                    )}
-                                </GravixProvider>
+                                                    return (
+                                                        <MarketStatsProvider>
+                                                            <DepositProvider>
+                                                                <Router>
+                                                                    <Switch>
+                                                                        <Route path={routes.main}>
+                                                                            <RootContent />
+                                                                        </Route>
+                                                                    </Switch>
+                                                                </Router>
+                                                            </DepositProvider>
+                                                        </MarketStatsProvider>
+                                                    )
+                                                }}
+                                            </PriceProvider>
+                                        )
+                                    }}
+                                </MarketProvider>
                             )
                         }}
-                    </MarketsProvider>
+                    </GravixProvider>
                 )
             }}
         </EvmWalletProvider>

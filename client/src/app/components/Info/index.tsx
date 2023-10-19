@@ -7,16 +7,16 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '../../hooks/useStore.js'
 import { MarketStore } from '../../stores/MarketStore.js'
 import { PriceStore } from '../../stores/PriceStore.js'
-import { MarketsStore } from '../../stores/MarketsStore.js'
 import { mapIdxToTicker } from '../../utils/gravix.js'
 import { MarketStatsStore } from '../../stores/MarketStatsStore.js'
 import { abbrNumber } from '../../utils/abbr-number.js'
 import { decimalAmount } from '../../utils/decimal-amount.js'
+import { GravixStore } from '../../stores/GravixStore.js'
 
 export const Info: React.FC = observer(() => {
     const market = useStore(MarketStore)
     const price = useStore(PriceStore)
-    const markets = useStore(MarketsStore)
+    const gravix = useStore(GravixStore)
     const stats = useStore(MarketStatsStore)
 
     const openInterestS = React.useMemo(
@@ -43,12 +43,12 @@ export const Info: React.FC = observer(() => {
         <div className={styles.info}>
             <Flex align="center" gap="large">
                 <Select
-                    disabled={markets.markets.length === 0}
+                    disabled={gravix.markets.length === 0}
                     className={styles.select}
                     size="large"
-                    value={markets.markets.length > 0 ? market.idx : undefined}
+                    value={gravix.markets.length > 0 ? market.idx : undefined}
                     onChange={market.setIdx}
-                    options={markets.markets.map(item => ({
+                    options={gravix.markets.map(item => ({
                         label: mapIdxToTicker(item.marketIdx.toString()),
                         value: item.marketIdx.toString(),
                     }))}

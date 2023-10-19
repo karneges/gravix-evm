@@ -1,7 +1,7 @@
 import { makeAutoObservable } from 'mobx'
-import { MarketsStore } from './MarketsStore.js'
 import { MarketInfo } from '../../types.js'
 import { decimalLeverage, decimalPercent } from '../utils/gravix.js'
+import { GravixStore } from './GravixStore.js'
 
 type State = {
     idx: string
@@ -14,7 +14,7 @@ const initialState: State = {
 export class MarketStore {
     protected state = initialState
 
-    constructor(protected markets: MarketsStore) {
+    constructor(protected gravix: GravixStore) {
         makeAutoObservable(
             this,
             {},
@@ -33,7 +33,7 @@ export class MarketStore {
     }
 
     get market(): MarketInfo | undefined {
-        return this.markets.byIdx[this.idx]
+        return this.gravix.byIdx[this.idx]
     }
 
     get totalLongs(): string | undefined {
