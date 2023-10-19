@@ -19,13 +19,13 @@ export const Root: React.FC = () => {
         <EvmWalletProvider>
             {evmWallet => {
                 const GravixProvider = useProvider(GravixStore, evmWallet)
-                const BalanceProvider = useProvider(BalanceStore, evmWallet)
                 return (
-                    <BalanceProvider>
-                        <GravixProvider>
-                            {gravix => {
-                                const MarketProvider = useProvider(MarketStore, gravix, evmWallet)
-                                return (
+                    <GravixProvider>
+                        {gravix => {
+                            const BalanceProvider = useProvider(BalanceStore, evmWallet, gravix)
+                            const MarketProvider = useProvider(MarketStore, gravix, evmWallet)
+                            return (
+                                <BalanceProvider>
                                     <MarketProvider>
                                         {market => {
                                             const PriceProvider = useProvider(PriceStore, market)
@@ -70,10 +70,10 @@ export const Root: React.FC = () => {
                                             )
                                         }}
                                     </MarketProvider>
-                                )
-                            }}
-                        </GravixProvider>
-                    </BalanceProvider>
+                                </BalanceProvider>
+                            )
+                        }}
+                    </GravixProvider>
                 )
             }}
         </EvmWalletProvider>
