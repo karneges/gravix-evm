@@ -43,7 +43,7 @@ export class GravixStore {
     }
 
     init() {
-        this.reactions.create(reaction(() => !!this.wallet.provider, this.syncDetails, { fireImmediately: true }))
+        this.reactions.create(reaction(() => this.wallet.address, this.syncDetails, { fireImmediately: true }))
     }
 
     initTheme() {

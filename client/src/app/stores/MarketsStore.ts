@@ -30,7 +30,7 @@ export class MarketsStore {
     }
 
     init(): void {
-        this.reactions.create(reaction(() => !!this.wallet.provider, this.sync, { fireImmediately: true }))
+        this.reactions.create(reaction(() => this.wallet.address, this.sync, { fireImmediately: true }))
     }
 
     async sync(): Promise<void> {

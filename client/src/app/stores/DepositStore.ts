@@ -370,7 +370,7 @@ export class DepositStore {
     }
 
     static async getAssetData(marketIdx: string, chainId: string): Promise<AssetData> {
-        const data = await fetch('https://api-cc35d.ondigitalocean.app/signature', {
+        const data = await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

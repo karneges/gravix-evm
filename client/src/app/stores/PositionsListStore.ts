@@ -103,7 +103,7 @@ export class PositionsListStore {
             const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
 
             const assetData = await (
-                await fetch('https://api-cc35d.ondigitalocean.app/signature', {
+                await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

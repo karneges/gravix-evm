@@ -43,9 +43,10 @@ export const Info: React.FC = observer(() => {
         <div className={styles.info}>
             <Flex align="center" gap="large">
                 <Select
+                    disabled={markets.markets.length === 0}
                     className={styles.select}
                     size="large"
-                    value={market.idx}
+                    value={markets.markets.length > 0 ? market.idx : undefined}
                     onChange={market.setIdx}
                     options={markets.markets.map(item => ({
                         label: mapIdxToTicker(item.marketIdx.toString()),
@@ -62,24 +63,32 @@ export const Info: React.FC = observer(() => {
 
                 <Flex className={styles.item} vertical>
                     <Typography.Text className={styles.label}>Open Interest, l</Typography.Text>
-                    {openInterestL && maxTotalLongsUSD && (
-                        <Typography.Text className={styles.value} strong>
-                            ${openInterestL}
-                            {' / '}
-                            {maxTotalLongsUSD}
-                        </Typography.Text>
-                    )}
+                    <Typography.Text className={styles.value} strong>
+                        {openInterestL && maxTotalLongsUSD ? (
+                            <>
+                                ${openInterestL}
+                                {' / '}
+                                {maxTotalLongsUSD}
+                            </>
+                        ) : (
+                            '\u200B'
+                        )}
+                    </Typography.Text>
                 </Flex>
 
                 <Flex className={styles.item} vertical>
-                    <Typography.Text className={styles.label}>Open Interest, 2</Typography.Text>
-                    {openInterestS && maxTotalShortsUSD && (
-                        <Typography.Text className={styles.value} strong>
-                            ${openInterestS}
-                            {' / '}
-                            {maxTotalShortsUSD}
-                        </Typography.Text>
-                    )}
+                    <Typography.Text className={styles.label}>Open Interest, s</Typography.Text>
+                    <Typography.Text className={styles.value} strong>
+                        {openInterestS && maxTotalShortsUSD ? (
+                            <>
+                                ${openInterestS}
+                                {' / '}
+                                {maxTotalShortsUSD}
+                            </>
+                        ) : (
+                            '\u200B'
+                        )}
+                    </Typography.Text>
                 </Flex>
             </Flex>
         </div>
