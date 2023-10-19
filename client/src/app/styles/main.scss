@@ -39,7 +39,7 @@
 }
 
 header .ant-typography {
-    .main--light &  {
+    .main--light & {
         color: white;
     }
 }
@@ -102,7 +102,31 @@ header .ant-typography {
 
 .ant-input-number {
     .ant-input-number-wrapper-disabled & {
-        background: transparent!important;
-        background-color: transparent!important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
+}
+
+dl.info {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+    grid-gap: 8px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 15px;
+
+    dt {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    dd {
+        margin: 0;
+        color: #fff;
+        text-align: right;
+        word-break: break-word;
+    }
+}
+
+.light-theme .toolPopup {
+    background: #000;
 }

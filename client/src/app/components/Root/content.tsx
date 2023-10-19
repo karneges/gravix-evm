@@ -5,7 +5,6 @@ import { GravixStore } from '../../stores/GravixStore.js'
 import { Header } from '../Header/index.js'
 import { routes } from '../../routes/index.js'
 import { Layout, ConfigProvider, theme } from 'antd'
-import classNames from 'classnames'
 import { observer } from 'mobx-react-lite'
 import { Earn } from '../Earn/index.js'
 import { Trade } from '../Trade/index.js'
@@ -20,7 +19,7 @@ export const RootContent: React.FC = observer(() => {
                 algorithm: gravixData.getThemeMode ? darkAlgorithm : defaultAlgorithm,
             }}
         >
-            <main className={classNames('main', gravixData.getThemeMode ? 'main--dark' : 'main--light')}>
+            <main className="main">
                 <Router>
                     <Layout>
                         <Header />

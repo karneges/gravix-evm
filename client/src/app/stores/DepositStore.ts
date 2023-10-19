@@ -185,7 +185,7 @@ export class DepositStore {
                     .addListener('MarketOrderExecution', (address, data) => {
                         if (address === this.wallet.address) {
                             const price = decimalAmount(data.openPrice, 8)
-                            const type = data.positionType === '0' ? 'Long' : 'Short'
+                            const type = data.positionType.toString() === '0' ? 'Long' : 'Short'
                             notification.success({
                                 message: 'Market order executed',
                                 description: `${mapIdxToTicker(data.marketIdx.toString())} ${type} open at $${price}`,
