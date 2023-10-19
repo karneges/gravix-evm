@@ -8,10 +8,10 @@ export const networks = [
         chainId: 59140,
         name: 'Linea Goerli',
     },
-    {
-        chainId: 1,
-        name: 'MAINNET',
-    },
+    // {
+    //     chainId: 1,
+    //     name: 'MAINNET',
+    // },
 ]
 
 export const defaultChainId = 59140
