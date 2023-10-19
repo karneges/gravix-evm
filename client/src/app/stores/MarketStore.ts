@@ -2,9 +2,16 @@ import { makeAutoObservable } from 'mobx'
 import { MarketInfo } from '../../types.js'
 import { decimalLeverage, decimalPercent } from '../utils/gravix.js'
 import { GravixStore } from './GravixStore.js'
+import { EvmWalletStore } from './EvmWalletStore.js'
 
 type State = {
     idx?: string
+}
+
+type TAssetData = {
+    price: number
+    timestamp: number
+    signature: string
 }
 
 const initialState: State = {}
@@ -12,7 +19,10 @@ const initialState: State = {}
 export class MarketStore {
     protected state = initialState
 
-    constructor(protected gravix: GravixStore) {
+    constructor(
+        protected gravix: GravixStore,
+        protected wallet: EvmWalletStore,
+    ) {
         makeAutoObservable(
             this,
             {},
@@ -24,6 +34,23 @@ export class MarketStore {
 
     setIdx(val: string): void {
         this.state.idx = val
+    }
+
+    async loadAssetData(): Promise<TAssetData | undefined> {
+        const assetData = await (
+            await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    marketIdx: this.idx,
+                    chainId: this.wallet.chainId,
+                }),
+            })
+        ).json()
+
+        return assetData
     }
 
     get idx(): string | undefined {

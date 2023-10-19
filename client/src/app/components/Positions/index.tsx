@@ -7,14 +7,14 @@ import { PositionsContent } from './content.js'
 import { observer } from 'mobx-react-lite'
 import { GravixStore } from '../../stores/GravixStore.js'
 import { BalanceStore } from '../../stores/BalanceStore.js'
-import { MarketStatsStore } from '../../stores/MarketStatsStore.js'
+import { MarketStore } from '../../stores/MarketStore.js'
 
 export const Positions: React.FC = observer(() => {
     const EvmWalletS = useStore(EvmWalletStore)
     const Gravix = useStore(GravixStore)
     const balance = useStore(BalanceStore)
-    const marketStats = useStore(MarketStatsStore)
-    const PositionsProvider = useProvider(PositionsListStore, EvmWalletS, Gravix, balance, marketStats)
+    const market = useStore(MarketStore)
+    const PositionsProvider = useProvider(PositionsListStore, EvmWalletS, Gravix, balance, market)
 
     return (
         <PositionsProvider>
