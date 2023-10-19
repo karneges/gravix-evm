@@ -18,7 +18,7 @@ export const Header = observer(() => {
     const gravixStore = useStore(GravixStore)
 
     return (
-        <Layout.Header style={headerStyle}>
+        <Layout.Header style={headerStyle} className={styles.header}>
             <Row style={{ height: '100%' }} justify="space-between" align="middle">
                 <div className={styles.menu}>
                     <Typography.Text>Gravix</Typography.Text>
