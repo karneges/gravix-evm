@@ -46,7 +46,7 @@ export class EarnStore {
 
     init() {
         this.reactions.create(
-            reaction(() => this.wallet.address, this.syncBalance, {
+            reaction(() => [this.wallet.address, this.wallet.chainId], this.syncBalance, {
                 fireImmediately: true,
             }),
         )

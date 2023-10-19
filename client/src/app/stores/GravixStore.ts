@@ -1,7 +1,7 @@
 import { makeAutoObservable, reaction, runInAction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import { ethers } from 'ethers'
-import { GravixVault } from '../../config.js'
+import { GravixVault, defaultChainId, networks } from '../../config.js'
 import GravixAbi from '../../assets/abi/Gravix.json'
 import { Gravix } from '../../assets/misc/index.js'
 import { Reactions } from '../utils/reactions.js'
@@ -18,16 +18,20 @@ type State = {
     maxPnlRate?: bigint
     minPositionCollateral?: bigint
     markets: MarketInfo[]
+    chainId: number
 }
 
 const initialState: State = {
     markets: [],
+    chainId: defaultChainId,
 }
 
 export class GravixStore {
     protected state = initialState
 
     protected reactions = new Reactions()
+
+    protected provider?: ethers.BrowserProvider
 
     readonly priceDecimals = 8
 
@@ -49,14 +53,14 @@ export class GravixStore {
 
     init() {
         this.reactions.create(
-            reaction(() => this.wallet.address, this.initListener, { fireImmediately: true }),
-            reaction(() => this.wallet.address, this.syncData, { fireImmediately: true }),
+            reaction(() => [this.wallet.address, this.wallet.chainId], this.syncData, { fireImmediately: true }),
+            reaction(() => this.wallet.chainId, this.syncChainId, { fireImmediately: true }),
         )
     }
 
     dispose() {
         this.reactions.destroy()
-        this.wallet.ethers?.off(this.event, this.onContract).catch(console.error)
+        this.provider?.off(this.event, this.onContract).catch(console.error)
         this.state = initialState
     }
 
@@ -79,8 +83,8 @@ export class GravixStore {
 
     async initListener(): Promise<void> {
         try {
-            await this.wallet.ethers?.off(this.event, this.onContract)
-            await this.wallet.ethers?.on(this.event, this.onContract)
+            await this.provider?.off(this.event, this.onContract)
+            await this.provider?.on(this.event, this.onContract)
         } catch (e) {
             console.error(e)
         }
@@ -95,24 +99,44 @@ export class GravixStore {
     }, 500)
 
     async syncData(): Promise<void> {
-        if (!this.wallet.ethers) {
-            return
+        let maxPnlRate: bigint,
+            minPositionCollateral: bigint,
+            markets: MarketInfo[] = []
+
+        if (this.wallet.provider) {
+            try {
+                this.provider = new ethers.BrowserProvider(this.wallet.provider)
+                const signer = await this.provider.getSigner()
+                const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+                const details = await gravix.getDetails()
+                const _markets = await gravix.getAllMarkets()
+
+                await this.initListener()
+
+                maxPnlRate = details.maxPnlRate
+                minPositionCollateral = details.minPositionCollateral
+                markets = _markets.map(mapMarketInfo)
+            } catch (e) {
+                console.error(e)
+            }
         }
 
-        try {
-            const signer = await this.wallet.ethers.getSigner()
-            const gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
-            const details = await gravix.getDetails()
-            const markets = await gravix.getAllMarkets()
+        runInAction(() => {
+            this.state.maxPnlRate = maxPnlRate
+            this.state.minPositionCollateral = minPositionCollateral
+            this.state.markets = markets
+        })
+    }
 
-            runInAction(() => {
-                this.state.maxPnlRate = details.maxPnlRate
-                this.state.minPositionCollateral = details.minPositionCollateral
-                this.state.markets = markets.map(mapMarketInfo)
-            })
-        } catch (e) {
-            console.error(e)
+    syncChainId(): void {
+        if (this.wallet.chainId) {
+            const network = networks.find(item => item.chainId === this.wallet.chainId) ?? networks[0]
+            this.state.chainId = network.chainId
         }
+    }
+
+    setChainId(val: number): void {
+        this.state.chainId = val
     }
 
     get markets(): MarketInfo[] {
@@ -133,6 +157,10 @@ export class GravixStore {
 
     get minPositionCollateral(): string | undefined {
         return this.state.minPositionCollateral?.toString()
+    }
+
+    get chainId(): number {
+        return this.state.chainId
     }
 }
 
