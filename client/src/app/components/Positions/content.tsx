@@ -82,9 +82,9 @@ export const PositionsContent: React.FC = observer(() => {
                 ),
             },
             {
-                title: '',
+                title: 'Liquidation price',
                 dataIndex: '',
-                key: 'action',
+                key: 'liquidation',
                 render: (_: any, item: TGravixPosition, index: number) => (
                     <span>
                         {decimalAmount(
