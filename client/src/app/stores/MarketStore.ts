@@ -62,6 +62,10 @@ export class MarketStore {
         return this.idx ? this.gravix.byIdx[this.idx] : undefined
     }
 
+    get ticker(): string | undefined {
+        return this.market?.ticker
+    }
+
     get totalLongs(): string | undefined {
         return this.market?.market.totalLongsAsset.toString()
     }

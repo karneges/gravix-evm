@@ -16,7 +16,7 @@ export const TradingView: React.FC = observer(() => {
 
     useEffect(() => {
         let widget: any
-        const idx = market.idx
+        const ticker = market.ticker
 
         if (!tvScriptLoadingPromise) {
             tvScriptLoadingPromise = new Promise(resolve => {
@@ -32,12 +32,12 @@ export const TradingView: React.FC = observer(() => {
             })
         }
 
-        if (idx) {
+        if (ticker) {
             tvScriptLoadingPromise
                 .then(() => {
                     widget = new (window as any).TradingView.widget({
                         autosize: true,
-                        symbol: mapChartSymbol(idx),
+                        symbol: mapChartSymbol(ticker),
                         interval: 'D',
                         timezone: 'Etc/UTC',
                         theme: gravix.isDarkMode ? 'dark' : 'light',
@@ -62,7 +62,7 @@ export const TradingView: React.FC = observer(() => {
                 }
             }
         }
-    }, [market.idx, gravix.isDarkMode])
+    }, [market.ticker, gravix.isDarkMode])
 
     return (
         <div

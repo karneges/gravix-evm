@@ -10,28 +10,41 @@ export type WithoutArr<T> = {
     }[keyof T]]: T[Key]
 }
 
-export const mapIdxToTicker = (idx: string) => {
-    switch (idx) {
-        case '0':
+export const mapTickerToTicker = (ticker: string) => {
+    switch (ticker) {
+        case 'BTCUSDT':
             return 'BTC/USD'
+        case 'ETHUSDT':
+            return 'BTC/USD'
+        case 'BNBUSDT':
+            return 'BNB/USD'
         default:
             throw new Error('Unknown idx')
     }
 }
 
-export const mapChartSymbol = (idx: string) => {
-    switch (idx) {
-        case '0':
+export const mapChartSymbol = (ticker: string) => {
+    switch (ticker) {
+        case 'BTCUSDT':
             return 'BINANCE:BTCUSDT'
+        case 'ETHUSDT':
+            return 'BINANCE:ETHUSDT'
+        case 'BNBUSDT':
+            return 'BINANCE:BNBUSDT'
         default:
             throw new Error('Unknown market')
     }
 }
 
-export const mapApiSymbol = (idx: string) => {
-    switch (idx) {
-        case '0':
+export const mapApiSymbol = (ticker: string) => {
+    console.log(ticker)
+    switch (ticker) {
+        case 'BTCUSDT':
             return 'BTCUSDT'
+        case 'ETHUSDT':
+            return 'ETHUSDT'
+        case 'BNBUSDT':
+            return 'BNBUSDT'
         default:
             throw new Error('Unknown market')
     }

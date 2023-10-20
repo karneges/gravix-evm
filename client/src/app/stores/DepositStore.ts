@@ -10,7 +10,7 @@ import { PriceStore } from './PriceStore.js'
 import { GravixStore } from './GravixStore.js'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { normalizePercent } from '../utils/mix.js'
-import { approveTokens, mapIdxToTicker, normalizeLeverage } from '../utils/gravix.js'
+import { approveTokens, mapTickerToTicker, normalizeLeverage } from '../utils/gravix.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { MarketStore } from './MarketStore.js'
 import { BalanceStore } from './BalanceStore.js'
@@ -143,6 +143,10 @@ export class DepositStore {
                 throw new Error('market.idx must be defined')
             }
 
+            if (!this.market.ticker) {
+                throw new Error('market.ticker must be defined')
+            }
+
             if (!this.gravix.network) {
                 throw new Error('gravix.network must be defined')
             }
@@ -176,7 +180,7 @@ export class DepositStore {
                             const type = data.positionType.toString() === '0' ? 'Long' : 'Short'
                             notification.success({
                                 message: 'Market order executed',
-                                description: `${mapIdxToTicker(data.marketIdx.toString())} ${type} open at $${price}`,
+                                description: `${mapTickerToTicker(this.market.ticker!)} ${type} open at $${price}`,
                                 placement: 'bottomRight',
                             })
                             resolve(true)

@@ -11,7 +11,7 @@ import { GravixStore } from './GravixStore.js'
 import { BigNumber } from 'bignumber.js'
 import { FullPositionData, PositionViewData, TGravixPosition, WithoutArr } from '../../types.js'
 import { lastOfCalls } from '../utils/last-of-calls.js'
-import { mapIdxToTicker } from '../utils/gravix.js'
+import { mapTickerToTicker } from '../utils/gravix.js'
 import { BalanceStore } from './BalanceStore.js'
 import { MarketStore } from './MarketStore.js'
 
@@ -158,7 +158,7 @@ export class PositionsListStore {
                         if (address === this.evmWallet.address) {
                             const price = decimalAmount(data.closePrice.toString(), 8)
                             const type = data.position.positionType.toString() === '0' ? 'Long' : 'Short'
-                            const ticker = mapIdxToTicker(data.position.marketIdx.toString())
+                            const ticker = mapTickerToTicker(this.market.ticker!)
                             notification.success({
                                 message: 'Position closed',
                                 description: `${ticker} ${type} closed at $${price}`,

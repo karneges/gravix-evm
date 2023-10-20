@@ -13,7 +13,7 @@ import { PositionItemClose } from './Close/index.js'
 import { PositionItemType } from './PositionItemType/index.js'
 import { NetValueInfoProvider } from './NetValueInfo/index.js'
 import { TGravixPosition } from '../../../types.js'
-import { mapIdxToTicker } from '../../utils/gravix.js'
+import { mapTickerToTicker } from '../../utils/gravix.js'
 
 const { Title } = Typography
 
@@ -57,17 +57,20 @@ export const PositionsContent: React.FC = observer(() => {
                 title: 'Type',
                 dataIndex: 'positionType',
                 key: 'positionType',
-                render: (_: any, item: TGravixPosition) => (
-                    <>
-                        {item.marketIdx !== undefined ? (
-                            <PositionItemType
-                                leverage={item.leverage.toString()}
-                                symbol={mapIdxToTicker(item.marketIdx.toString())}
-                                type={item.positionType.toString()}
-                            />
-                        ) : null}
-                    </>
-                ),
+                render: (_: any, item: TGravixPosition) => {
+                    const ticker = gravix.byIdx[item.marketIdx.toString()]?.ticker
+                    return (
+                        <>
+                            {ticker && (
+                                <PositionItemType
+                                    leverage={item.leverage.toString()}
+                                    symbol={mapTickerToTicker(ticker)}
+                                    type={item.positionType.toString()}
+                                />
+                            )}
+                        </>
+                    )
+                },
             },
             {
                 title: 'Size',
