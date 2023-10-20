@@ -7,7 +7,7 @@ import { observer } from 'mobx-react-lite'
 import { useStore } from '../../hooks/useStore.js'
 import { MarketStore } from '../../stores/MarketStore.js'
 import { PriceStore } from '../../stores/PriceStore.js'
-import { mapIdxToTicker } from '../../utils/gravix.js'
+import { mapTickerToTicker } from '../../utils/gravix.js'
 import { MarketStatsStore } from '../../stores/MarketStatsStore.js'
 import { abbrNumber } from '../../utils/abbr-number.js'
 import { decimalAmount } from '../../utils/decimal-amount.js'
@@ -49,7 +49,7 @@ export const Info: React.FC = observer(() => {
                     value={gravix.markets.length > 0 ? market.idx : undefined}
                     onChange={market.setIdx}
                     options={gravix.markets.map(item => ({
-                        label: mapIdxToTicker(item.marketIdx.toString()),
+                        label: mapTickerToTicker(item.ticker.toString()),
                         value: item.marketIdx.toString(),
                     }))}
                 />
