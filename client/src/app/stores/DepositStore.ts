@@ -239,7 +239,7 @@ export class DepositStore {
             const signer = await provider.getSigner()
             const usdtContract = new ethers.Contract(this.gravix.network?.TokenFaucet, Mint20Abi, signer)
 
-            await usdtContract.mint(this.wallet.address, '100000000')
+            await usdtContract.mint(this.wallet.address, '1000000000')
         } catch (e) {
             console.error(e)
         }
