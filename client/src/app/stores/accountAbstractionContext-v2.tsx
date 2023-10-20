@@ -47,7 +47,7 @@ export class AccountAbstractionStore {
     init() {
         this.reactions.create(
             reaction(
-                () => this.chain,
+                () => [this.chain, this.evmWalletStore.chainId],
                 () => {
                     this.onChainChanged()
                     this.isRelayerLoading = false

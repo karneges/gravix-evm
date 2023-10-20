@@ -6,11 +6,7 @@ async function main() {
   const [deployer, priceNode] = await ethers.getSigners();
   const faucet = await ethers.getContractAt(
     "ERC20Faucet",
-    "0x095e8e8d007CFBE3932685be3a3165F005f641F5",
-  );
-  const usdtToken = await ethers.getContractAt(
-    "ERC20Tokens",
-    "0x2667fC20cAD017162a6B2a29127A7F8aC88d1Ecc",
+    "0xb496B3D20CEB69321f5E17F4798683cc2DCcF3CC",
   );
 
   // await faucet.setToken("0x2667fC20cAD017162a6B2a29127A7F8aC88d1Ecc", {

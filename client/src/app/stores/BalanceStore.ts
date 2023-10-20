@@ -34,10 +34,14 @@ export class BalanceStore {
     }
     init() {
         this.reactions.create(
-            reaction(() => [this.wallet, this.gravix.network], this.syncUsdtBalance, {
-                fireImmediately: true,
-                equals: comparer.structural,
-            }),
+            reaction(
+                () => [this.wallet, this.gravix.network, this.accountAbstractionStore.wallets],
+                this.syncUsdtBalance,
+                {
+                    fireImmediately: true,
+                    equals: comparer.structural,
+                },
+            ),
         )
     }
 
