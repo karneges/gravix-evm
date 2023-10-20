@@ -45,8 +45,6 @@ export class AccountAbstractionStore {
     }
 
     init() {
-        debugger
-
         this.reactions.create(
             reaction(
                 () => this.chain,
@@ -75,12 +73,12 @@ export class AccountAbstractionStore {
 
     get wallets() {
         return {
-            safe: this.safe,
+            safe: this.evmWalletStore.chainId || '' === initialChain.id ? this.safe : '',
             owner: this.evmWalletStore.state.address || '',
         }
     }
     get isAuthenticated() {
-        const isAuth = !!this.wallets.safe && !!this.chainId
+        const isAuth = !!this.wallets.safe && this.chainId === initialChain.id
         console.log('isAuthenticated: ', isAuth)
         return isAuth
     }
@@ -144,7 +142,6 @@ export class AccountAbstractionStore {
     }
 
     onLoginWeb3Auth = async () => {
-        debugger
         if (!this.web3AuthModalPack) return
 
         try {
@@ -168,7 +165,6 @@ export class AccountAbstractionStore {
     }
 
     getSafeAddress = async () => {
-        debugger
         // @ts-ignore
         if (this.web3Provider !== 10 && this.web3AuthModalPack != 10) {
             const signer = this.web3Provider.getSigner()

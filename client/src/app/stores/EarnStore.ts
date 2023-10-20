@@ -233,7 +233,6 @@ export class EarnStore {
                 signer,
             ) as ethers.BaseContract as Gravix
             const amount = normalizeAmount(this.amount, 6)
-            debugger
             console.log(`Is authenticated: ${this.accountAbstractionStore.isAuthenticated}`)
             await approveTokens(
                 this.gravix.network.UsdtToken,
@@ -247,7 +246,6 @@ export class EarnStore {
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravix!
                     .addListener('LiquidityPoolDeposit', (address, usdt, stgUsdt) => {
-                        debugger
                         if (address === this.wallet) {
                             const _usdt = decimalAmount(usdt, 6)
                             const _stgUsdt = decimalAmount(stgUsdt, 6)
@@ -319,7 +317,6 @@ export class EarnStore {
             if (!this.gravix.network) {
                 throw new Error('gravix.network must be defined')
             }
-            debugger
             const amount = normalizeAmount(this.amount, 6)
             await approveTokens(
                 this.gravix.network.StgUsdtToken,

@@ -30,8 +30,8 @@ export const Root: React.FC = () => {
                                     {accountAbstraction => {
                                         const BalanceProvider = useProvider(
                                             BalanceStore,
-                                            accountAbstraction.wallets,
-                                            evmWallet.provider!,
+                                            accountAbstraction,
+                                            evmWallet,
                                             gravix,
                                         )
                                         const MarketProvider = useProvider(MarketStore, gravix, evmWallet)

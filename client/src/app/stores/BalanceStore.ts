@@ -3,7 +3,7 @@ import { Reactions } from '../utils/reactions.js'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import { getTokenBalance } from '../utils/gravix.js'
 import { GravixStore } from './GravixStore.js'
-import { MetaMaskInpageProvider } from '@metamask/providers'
+import { AccountAbstractionStore } from './accountAbstractionContext-v2.js'
 
 type State = {
     usdtBalance?: string
@@ -15,11 +15,8 @@ export class BalanceStore {
     protected state: State = {}
 
     constructor(
-        protected wallets: {
-            owner?: string
-            safe?: string
-        },
-        protected provider: MetaMaskInpageProvider,
+        protected accountAbstractionStore: AccountAbstractionStore,
+        protected evmWallet: EvmWalletStore,
         private gravix: GravixStore,
     ) {
         makeAutoObservable(
@@ -31,7 +28,9 @@ export class BalanceStore {
         )
     }
     get wallet() {
-        return this.wallets.safe || this.wallets.owner
+        return this.accountAbstractionStore.isAuthenticated
+            ? this.accountAbstractionStore.wallets.safe
+            : this.accountAbstractionStore.wallets.owner
     }
     init() {
         this.reactions.create(
@@ -48,12 +47,19 @@ export class BalanceStore {
 
     async syncUsdtBalance(): Promise<void> {
         let usdtBalance: string
+        debugger
         try {
-            if ((this.wallets.safe || this.wallets.owner) && this.provider && this.gravix.network) {
-                usdtBalance = await getTokenBalance(this.gravix.network.UsdtToken, this.wallet!, this.provider)
+            if (this.wallet && this.evmWallet.provider && this.gravix.network) {
+                usdtBalance = await getTokenBalance(
+                    this.gravix.network.UsdtToken,
+                    this.wallet!,
+                    this.evmWallet.provider,
+                )
                 console.log(`address: ${this.wallet}, usdtBalance: ${usdtBalance}`)
+                debugger
             }
         } catch (e) {
+            debugger
             console.error(e)
         }
 
