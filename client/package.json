@@ -37,6 +37,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "ethers": "^6.8.0",
+    "ethers-v5": "npm:ethers@^5.7.2",
     "formik": "^2.4.3",
     "https-browserify": "^1.0.0",
     "just-memoize": "^2.2.0",

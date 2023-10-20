@@ -12,6 +12,8 @@ import { routes } from '../../routes/index.js'
 import { MarketStatsStore } from '../../stores/MarketStatsStore.js'
 import { BalanceStore } from '../../stores/BalanceStore.js'
 
+import { AccountAbstractionStore } from '../../stores/accountAbstractionContext-v2.js'
+
 export const Root: React.FC = () => {
     const EvmWalletProvider = useProvider(EvmWalletStore)
 
@@ -22,55 +24,78 @@ export const Root: React.FC = () => {
                 return (
                     <GravixProvider>
                         {gravix => {
-                            const BalanceProvider = useProvider(BalanceStore, evmWallet, gravix)
-                            const MarketProvider = useProvider(MarketStore, gravix, evmWallet)
+                            const AccountAbstractionProvider = useProvider(AccountAbstractionStore, evmWallet!)
                             return (
-                                <BalanceProvider>
-                                    <MarketProvider>
-                                        {market => {
-                                            const PriceProvider = useProvider(PriceStore, market)
-                                            return (
-                                                <PriceProvider>
-                                                    {price => {
-                                                        const balance = useStore(BalanceStore)
-                                                        const MarketStatsProvider = useProvider(
-                                                            MarketStatsStore,
-                                                            price,
-                                                            market,
-                                                        )
+                                <AccountAbstractionProvider>
+                                    {accountAbstraction => {
+                                        const BalanceProvider = useProvider(
+                                            BalanceStore,
+                                            accountAbstraction.wallets,
+                                            evmWallet.provider!,
+                                            gravix,
+                                        )
+                                        const MarketProvider = useProvider(MarketStore, gravix, evmWallet)
+                                        return (
+                                            <BalanceProvider>
+                                                <MarketProvider>
+                                                    {market => {
+                                                        const PriceProvider = useProvider(PriceStore, market)
                                                         return (
-                                                            <MarketStatsProvider>
-                                                                {marketStats => {
-                                                                    const DepositProvider = useProvider(
-                                                                        DepositStore,
-                                                                        evmWallet,
+                                                            <PriceProvider>
+                                                                {price => {
+                                                                    const balance = useStore(BalanceStore)
+                                                                    const MarketStatsProvider = useProvider(
+                                                                        MarketStatsStore,
                                                                         price,
-                                                                        gravix,
                                                                         market,
-                                                                        marketStats,
-                                                                        balance,
                                                                     )
-
                                                                     return (
-                                                                        <DepositProvider>
-                                                                            <Router>
-                                                                                <Switch>
-                                                                                    <Route path={routes.main}>
-                                                                                        <RootContent />
-                                                                                    </Route>
-                                                                                </Switch>
-                                                                            </Router>
-                                                                        </DepositProvider>
+                                                                        <MarketStatsProvider>
+                                                                            {marketStats => {
+                                                                                const DepositProvider = useProvider(
+                                                                                    DepositStore,
+                                                                                    evmWallet,
+                                                                                    price,
+                                                                                    gravix,
+                                                                                    market,
+                                                                                    marketStats,
+                                                                                    balance,
+                                                                                    accountAbstraction.isAuthenticated
+                                                                                        ? {
+                                                                                              safeTransaction:
+                                                                                                  accountAbstraction.relayTransaction,
+                                                                                              walletAddress:
+                                                                                                  accountAbstraction
+                                                                                                      .wallets.safe,
+                                                                                          }
+                                                                                        : undefined,
+                                                                                )
+
+                                                                                return (
+                                                                                    <DepositProvider>
+                                                                                        <Router>
+                                                                                            <Switch>
+                                                                                                <Route
+                                                                                                    path={routes.main}
+                                                                                                >
+                                                                                                    <RootContent />
+                                                                                                </Route>
+                                                                                            </Switch>
+                                                                                        </Router>
+                                                                                    </DepositProvider>
+                                                                                )
+                                                                            }}
+                                                                        </MarketStatsProvider>
                                                                     )
                                                                 }}
-                                                            </MarketStatsProvider>
+                                                            </PriceProvider>
                                                         )
                                                     }}
-                                                </PriceProvider>
-                                            )
-                                        }}
-                                    </MarketProvider>
-                                </BalanceProvider>
+                                                </MarketProvider>
+                                            </BalanceProvider>
+                                        )
+                                    }}
+                                </AccountAbstractionProvider>
                             )
                         }}
                     </GravixProvider>

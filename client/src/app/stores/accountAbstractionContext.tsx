@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { ethers, parseUnits } from 'ethers'
+
 import { CHAIN_NAMESPACES, WALLET_ADAPTERS } from '@web3auth/base'
 import { Web3AuthOptions } from '@web3auth/modal'
 import { OpenloginAdapter } from '@web3auth/openlogin-adapter'
@@ -8,9 +8,9 @@ import AccountAbstraction from '@safe-global/account-abstraction-kit-poc'
 import { Web3AuthModalPack } from '@safe-global/auth-kit'
 import { GelatoRelayPack } from '@safe-global/relay-kit'
 import { MetaTransactionData, MetaTransactionOptions } from '@safe-global/safe-core-sdk-types'
-
 import chains, { initialChain } from '../chains/chains.js'
 import usePolling from '../hooks/usePolling.js'
+import { ethers, parseUnits } from 'ethers'
 const getChain = (chainId?: string) => {
     const chain = chains.find(chain => chain.id === chainId)
 
@@ -211,13 +211,8 @@ const AccountAbstractionProvider = ({
     useEffect(() => {
         const getSafeAddress = async () => {
             if (web3Provider) {
-                debugger
-                const signer = await web3Provider.provider
-                    .getSigner('0x1450FE54AdF040f12c8202ba0b112BE9f5d2D7e0')
-                    .catch(e => {
-                        console.error(e)
-                        debugger
-                    })
+                const signer = await web3Provider.provider.getSigner('0x1450FE54AdF040f12c8202ba0b112BE9f5d2D7e0')
+
                 const relayPack = new GelatoRelayPack()
                 //@ts-ignore
 

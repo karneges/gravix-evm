@@ -10,6 +10,8 @@ import { Gravix } from '../../assets/misc/Gravix.js'
 import { BigNumber } from 'bignumber.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { GravixStore } from './GravixStore.js'
+import { MetaMaskInpageProvider } from '@metamask/providers'
+import { AccountAbstractionStore } from './accountAbstractionContext-v2.js'
 
 export enum EarnAction {
     Deposit = 'deposit',
@@ -35,7 +37,12 @@ export class EarnStore {
     protected reactions = new Reactions()
 
     constructor(
-        protected wallet: EvmWalletStore,
+        protected wallets: {
+            owner?: string
+            safe?: string
+        },
+        private readonly accountAbstractionStore: AccountAbstractionStore,
+        protected provider: MetaMaskInpageProvider,
         protected gravix: GravixStore,
     ) {
         makeAutoObservable(
@@ -46,10 +53,15 @@ export class EarnStore {
             },
         )
     }
-
+    get wallet() {
+        return this.wallets.safe || this.wallets.owner
+    }
+    get isSafeState() {
+        return this.accountAbstractionStore.isAuthenticated
+    }
     init() {
         this.reactions.create(
-            reaction(() => [this.wallet.address, this.gravix.network], this.syncBalance, {
+            reaction(() => [this.wallet, this.gravix.network], this.syncBalance, {
                 fireImmediately: true,
                 equals: comparer.structural,
             }),
@@ -132,12 +144,8 @@ export class EarnStore {
         let usdtBalance: string
 
         try {
-            if (this.wallet.provider && this.wallet.address && this.gravix.network) {
-                usdtBalance = await getTokenBalance(
-                    this.gravix.network.UsdtToken,
-                    this.wallet.address,
-                    this.wallet.provider,
-                )
+            if (this.wallet && this.gravix.network) {
+                usdtBalance = await getTokenBalance(this.gravix.network.UsdtToken, this.wallet, this.provider)
             }
         } catch (e) {
             console.error(e)
@@ -152,12 +160,8 @@ export class EarnStore {
         let stgUsdtBalance: string
 
         try {
-            if (this.wallet.provider && this.wallet.address && this.gravix.network) {
-                stgUsdtBalance = await getTokenBalance(
-                    this.gravix.network.StgUsdtToken,
-                    this.wallet.address,
-                    this.wallet.provider,
-                )
+            if (this.wallet && this.gravix.network) {
+                stgUsdtBalance = await getTokenBalance(this.gravix.network.StgUsdtToken, this.wallet, this.provider)
             }
         } catch (e) {
             console.error(e)
@@ -170,13 +174,13 @@ export class EarnStore {
 
     async syncPoolBalance(): Promise<void> {
         let poolBalance: string
-
+        debugger
         try {
-            if (this.wallet.provider && this.gravix.network) {
+            if (this.wallet && this.gravix.network) {
                 poolBalance = await getTokenBalance(
                     this.gravix.network.UsdtToken,
                     this.gravix.network.GravixVault,
-                    this.wallet.provider,
+                    this.provider,
                 )
             }
         } catch (e) {
@@ -205,7 +209,7 @@ export class EarnStore {
         })
 
         try {
-            if (!this.wallet.provider) {
+            if (!this.wallet) {
                 throw new Error('wallet.provider must be defined')
             }
 
@@ -213,7 +217,7 @@ export class EarnStore {
                 throw new Error('amount must be defined')
             }
 
-            if (!this.wallet.address) {
+            if (!this.wallet) {
                 throw new Error('wallet.address must be defined')
             }
 
@@ -221,7 +225,7 @@ export class EarnStore {
                 throw new Error('gravix.network must be defined')
             }
 
-            const provider = new ethers.BrowserProvider(this.wallet.provider)
+            const provider = new ethers.BrowserProvider(this.provider)
             const signer = await provider.getSigner()
             gravix = new ethers.Contract(
                 this.gravix.network.GravixVault,
@@ -229,18 +233,22 @@ export class EarnStore {
                 signer,
             ) as ethers.BaseContract as Gravix
             const amount = normalizeAmount(this.amount, 6)
+            debugger
+            console.log(`Is authenticated: ${this.accountAbstractionStore.isAuthenticated}`)
             await approveTokens(
                 this.gravix.network.UsdtToken,
-                this.wallet.address,
+                this.wallet!,
                 this.gravix.network.GravixVault,
                 amount,
-                this.wallet.provider,
+                this.provider,
+                this.isSafeState ? this.accountAbstractionStore.relayTransaction : undefined,
             )
-
+            console.log('APPROVED')
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravix!
                     .addListener('LiquidityPoolDeposit', (address, usdt, stgUsdt) => {
-                        if (address === this.wallet.address) {
+                        debugger
+                        if (address === this.wallet) {
                             const _usdt = decimalAmount(usdt, 6)
                             const _stgUsdt = decimalAmount(stgUsdt, 6)
                             notification.success({
@@ -253,9 +261,23 @@ export class EarnStore {
                     })
                     .catch(reject)
             })
-            await gravix.depositLiquidity(amount)
 
-            success = await successListener
+            if (this.isSafeState) {
+                const tx = await this.accountAbstractionStore.relayTransaction({
+                    data: gravix.interface.encodeFunctionData('depositLiquidity', [amount]),
+                    value: '0',
+                    to: this.gravix.network.GravixVault,
+                })
+                notification.success({
+                    message: 'Liquidity deposit success',
+                    description: `USDT deposited with tx ${tx}`,
+                    placement: 'bottomRight',
+                })
+            } else {
+                await gravix.depositLiquidity(amount)
+                success = await successListener
+            }
+            console.log('TRSNAFERED')
         } catch (e) {
             console.error(e)
             notification.error({
@@ -282,7 +304,7 @@ export class EarnStore {
         })
 
         try {
-            if (!this.wallet.provider) {
+            if (!this.wallet) {
                 throw new Error('wallet.provider must be defined')
             }
 
@@ -290,23 +312,23 @@ export class EarnStore {
                 throw new Error('amount must be defined')
             }
 
-            if (!this.wallet.address) {
+            if (!this.wallet) {
                 throw new Error('wallet.address must be defined')
             }
 
             if (!this.gravix.network) {
                 throw new Error('gravix.network must be defined')
             }
-
+            debugger
             const amount = normalizeAmount(this.amount, 6)
             await approveTokens(
                 this.gravix.network.StgUsdtToken,
-                this.wallet.address,
+                this.wallet!,
                 this.gravix.network.GravixVault,
                 amount,
-                this.wallet.provider,
+                this.provider,
             )
-            const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
+            const browserProvider = new ethers.BrowserProvider(this.provider)
             const signer = await browserProvider.getSigner()
             gravix = new ethers.Contract(
                 this.gravix.network.GravixVault,
@@ -317,7 +339,7 @@ export class EarnStore {
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravix!
                     .addListener('LiquidityPoolWithdraw', (address, usdt, stgUsdt) => {
-                        if (address === this.wallet.address) {
+                        if (address === this.wallet) {
                             const _usdt = decimalAmount(usdt, 6)
                             const _stgUsdt = decimalAmount(stgUsdt, 6)
                             notification.success({

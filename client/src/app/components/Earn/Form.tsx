@@ -14,7 +14,8 @@ export const EarnForm: React.FC = observer(() => {
     const onChangeTab = (e: string) => {
         form.setAction(e as EarnAction)
     }
-
+    debugger
+    console.log(form.loading)
     return (
         <div className={styles.earn}>
             <Card className={styles.form}>

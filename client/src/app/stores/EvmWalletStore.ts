@@ -10,7 +10,7 @@ type State = {
 }
 
 export class EvmWalletStore {
-    protected state: State = {}
+    public state: State = {}
 
     public provider?: MetaMaskInpageProvider
 

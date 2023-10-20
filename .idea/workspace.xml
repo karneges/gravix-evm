@@ -5,20 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3ddf1721-b4a7-4697-b9c4-5d44ff747eea" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/client/src/app/chains/chains.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/app/hooks/usePolling.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/src/app/components/SafeWallet/index.module.scss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/src/app/components/SafeWallet/index.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext-v2.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/evm/scripts/depositUsdt.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/evm/scripts/viewContarcts.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/client/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/client/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/components/Earn/Form.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/components/Earn/Form.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/components/Earn/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/components/Earn/index.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/app/components/Header/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/components/Header/index.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/app/components/Root/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/components/Root/index.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/app/hooks/useStore.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/hooks/useStore.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/stores/BalanceStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/BalanceStore.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/app/stores/DepositStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/DepositStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/webpack.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/client/webpack.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evm/hardhat.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/evm/hardhat.config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evm/scripts/deploy.ts" beforeDir="false" afterPath="$PROJECT_DIR$/evm/scripts/deploy.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evm/scripts/setMarket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/evm/scripts/setMarket.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/stores/EarnStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/EarnStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/stores/EvmWalletStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/EvmWalletStore.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/client/src/app/utils/gravix.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/utils/gravix.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,31 +68,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;O:/projects/broxus/gravix-evm/client/src/app/hooks&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;prettierjs.PrettierConfiguration.Package&quot;: &quot;O:\\projects\\broxus\\gravix-evm\\api\\node_modules\\prettier&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;settings.javascript.prettier&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;O:\\projects\\broxus\\gravix-evm\\api\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "git-widget-placeholder": "account-abstraction",
+    "last_opened_file_path": "O:/projects/broxus/gravix-evm/evm/scripts",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "prettierjs.PrettierConfiguration.Package": "O:\\projects\\broxus\\gravix-evm\\api\\node_modules\\prettier",
+    "settings.editor.selected.configurable": "settings.javascript.prettier",
+    "ts.external.directory.path": "O:\\projects\\broxus\\gravix-evm\\api\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="O:\projects\broxus\gravix-evm\evm\scripts" />
+      <recent name="O:\projects\broxus\gravix-evm\client\src\app\components" />
+      <recent name="O:\projects\broxus\gravix-evm\client\src\app\stores" />
       <recent name="O:\projects\broxus\gravix-evm\client\src\app\hooks" />
       <recent name="O:\projects\broxus\gravix-evm\client\src" />
-      <recent name="O:\projects\broxus\gravix-evm\client\src\app\stores" />
-      <recent name="O:\projects\broxus\gravix-evm\api" />
-      <recent name="O:\projects\broxus\gravix-evm\evm" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="O:\projects\broxus\gravix-evm\client\src\app" />

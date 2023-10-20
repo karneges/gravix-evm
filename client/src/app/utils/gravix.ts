@@ -68,24 +68,30 @@ export const approveTokens = async (
     vault: string,
     amount: string,
     provider: MetaMaskInpageProvider,
+    safeTransaction?: (params: { data: string; value: string; to: string }) => Promise<string | undefined>,
 ) => {
     const browserProvider = new ethers.BrowserProvider(provider)
     const signer = await browserProvider.getSigner()
     const ERC20Token = new ethers.Contract(token, ERC20Abi, signer)
     const allowance = await ERC20Token.allowance(user, vault)
     const delta = new BigNumber(allowance.toString()).minus(amount)
-
     if (delta.lt(0)) {
-        await ERC20Token.approve(vault, amount)
+        if (safeTransaction) {
+            const data = ERC20Token.interface.encodeFunctionData('approve', [vault, amount])
+            await safeTransaction({ data, value: '0', to: token })
+            return
+        } else {
+            await ERC20Token.approve(vault, amount)
 
-        let count = 0
-        let ready = false
-        while (!ready && count < 25) {
-            await delay(1000)
-            const allowance = await ERC20Token.allowance(user, vault)
-            const delta = new BigNumber(allowance.toString()).minus(amount)
-            ready = delta.gte(0)
-            count += 1
+            let count = 0
+            let ready = false
+            while (!ready && count < 25) {
+                await delay(1000)
+                const allowance = await ERC20Token.allowance(user, vault)
+                const delta = new BigNumber(allowance.toString()).minus(amount)
+                ready = delta.gte(0)
+                count += 1
+            }
         }
     }
 }

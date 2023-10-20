@@ -48,6 +48,10 @@ export class DepositStore {
         protected market: MarketStore,
         protected marketStats: MarketStatsStore,
         protected balance: BalanceStore,
+        private readonly safe?: {
+            safeTransaction: (params: { data: string; value: string; to: string }) => Promise<string | undefined>
+            walletAddress: string
+        },
     ) {
         makeAutoObservable(
             this,
@@ -170,12 +174,13 @@ export class DepositStore {
                 this.gravix.network.GravixVault,
                 this.collateralNormalized,
                 this.wallet.provider,
+                this.safe?.safeTransaction,
             )
 
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravix!
                     .addListener('MarketOrderExecution', (address, data) => {
-                        if (address === this.wallet.address) {
+                        if (address === (this.safe ? this.safe.walletAddress : this.wallet.address)) {
                             const price = decimalAmount(data.openPrice, 8)
                             const type = data.positionType.toString() === '0' ? 'Long' : 'Short'
                             notification.success({
@@ -189,6 +194,7 @@ export class DepositStore {
                     .catch(reject)
             })
 
+            // todo handle
             await gravix.openMarketPosition(
                 this.market.idx,
                 this.state.depositType,

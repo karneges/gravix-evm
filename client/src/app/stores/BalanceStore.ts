@@ -3,6 +3,7 @@ import { Reactions } from '../utils/reactions.js'
 import { EvmWalletStore } from './EvmWalletStore.js'
 import { getTokenBalance } from '../utils/gravix.js'
 import { GravixStore } from './GravixStore.js'
+import { MetaMaskInpageProvider } from '@metamask/providers'
 
 type State = {
     usdtBalance?: string
@@ -14,7 +15,11 @@ export class BalanceStore {
     protected state: State = {}
 
     constructor(
-        protected wallet: EvmWalletStore,
+        protected wallets: {
+            owner?: string
+            safe?: string
+        },
+        protected provider: MetaMaskInpageProvider,
         private gravix: GravixStore,
     ) {
         makeAutoObservable(
@@ -25,10 +30,12 @@ export class BalanceStore {
             },
         )
     }
-
+    get wallet() {
+        return this.wallets.safe || this.wallets.owner
+    }
     init() {
         this.reactions.create(
-            reaction(() => [this.wallet.address, this.gravix.network], this.syncUsdtBalance, {
+            reaction(() => [this.wallet, this.gravix.network], this.syncUsdtBalance, {
                 fireImmediately: true,
                 equals: comparer.structural,
             }),
@@ -41,14 +48,10 @@ export class BalanceStore {
 
     async syncUsdtBalance(): Promise<void> {
         let usdtBalance: string
-
         try {
-            if (this.wallet.provider && this.wallet.address && this.gravix.network) {
-                usdtBalance = await getTokenBalance(
-                    this.gravix.network.UsdtToken,
-                    this.wallet.address,
-                    this.wallet.provider,
-                )
+            if ((this.wallets.safe || this.wallets.owner) && this.provider && this.gravix.network) {
+                usdtBalance = await getTokenBalance(this.gravix.network.UsdtToken, this.wallet!, this.provider)
+                console.log(`address: ${this.wallet}, usdtBalance: ${usdtBalance}`)
             }
         } catch (e) {
             console.error(e)
