@@ -15,6 +15,7 @@ import { decimalAmount } from '../utils/decimal-amount.js'
 import { MarketStore } from './MarketStore.js'
 import { BalanceStore } from './BalanceStore.js'
 import { MarketStatsStore } from './MarketStatsStore.js'
+import { Mint20Abi } from '../../assets/abi/MInt20.js'
 
 export enum DepositType {
     Long = '0',
@@ -219,6 +220,29 @@ export class DepositStore {
             this.state.position = success ? '' : this.position
             this.state.loading = false
         })
+    }
+
+    async mintUsdt() {
+        try {
+            if (!this.wallet.provider) {
+                throw new Error('wallet.provider must be defined')
+            }
+
+            if (!this.wallet.address) {
+                throw new Error('wallet.address must be defined')
+            }
+
+            if (!this.gravix.network?.UsdtToken) {
+                throw new Error('no usdt token')
+            }
+            const provider = new ethers.BrowserProvider(this.wallet.provider)
+            const signer = await provider.getSigner()
+            const usdtContract = new ethers.Contract(this.gravix.network?.TokenFaucet, Mint20Abi, signer)
+
+            await usdtContract.mint(this.wallet.address, '100000000')
+        } catch (e) {
+            console.error(e)
+        }
     }
 
     get loading(): boolean {
