@@ -75,6 +75,7 @@ function NetValueInfoInner({
 
     return (
         <Tooltip
+            positions={['bottom', 'bottom']}
             content={
                 <>
                     <div className={styles.title}>Net value calc</div>
