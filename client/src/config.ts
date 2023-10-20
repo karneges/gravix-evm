@@ -21,6 +21,28 @@ export const networks = [
         TokenFaucet: '0x095e8e8d007CFBE3932685be3a3165F005f641F5',
         GravixVault: '0x9049aF67Bef5C3c2ABD71b47F1E7D56407AF6AD9',
     },
+    {
+        chainId: 534351,
+        name: 'Scroll',
+        rpc: 'https://scroll-sepolia.blockpi.network/v1/rpc/public',
+        currency: 'ETH',
+        explorer: 'https://sepolia.scrollscan.dev',
+        UsdtToken: '0x855D62073aFA4b3F724A6aD4229c9A4A895Ea5B4',
+        StgUsdtToken: '0x58898E11f46654aD9DE9576bD8FC04aEB29781Bc',
+        TokenFaucet: '0xb496B3D20CEB69321f5E17F4798683cc2DCcF3CC',
+        GravixVault: '0xEf733c427b664e7f6d93E556F5D797Ab678A9862',
+    },
+    {
+        chainId: 5001,
+        name: 'Mantle',
+        rpc: 'https://rpc.testnet.mantle.xyz/',
+        currency: 'BIT',
+        explorer: 'https://explorer.testnet.mantle.xyz/',
+        UsdtToken: '0x10e5E8f37f77c9E886D388B313787A2DE6246180',
+        StgUsdtToken: '0x81b92778cDCEe19d56FE7c9B9846927B5eDcE38f',
+        TokenFaucet: '0xD3a2b8B48cFa78fA7EF896DaE22A4378ABb7A675',
+        GravixVault: '0x46f6e0820DD0f132B459Dbea649CA4f5C003b4B9',
+    },
 ]
 
 export const defaultChainId = 59140
