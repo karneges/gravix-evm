@@ -8,6 +8,7 @@ import { GravixStore } from '../../stores/GravixStore.js'
 import { EvmWallet } from '../EvmWallet/index.js'
 import { routes } from '../../routes/index.js'
 import styles from './index.module.scss'
+import { useAccountAbstraction } from '../../stores/accountAbstractionContext.js'
 
 const headerStyle: React.CSSProperties = {
     width: '100%',
@@ -16,7 +17,23 @@ const headerStyle: React.CSSProperties = {
 
 export const Header = observer(() => {
     const gravixStore = useStore(GravixStore)
-
+    const {
+        loginWeb3Auth,
+        chainId,
+        isAuthenticated,
+        chain,
+        logoutWeb3Auth,
+        safeSelected,
+        setSafeSelected,
+        safes,
+        setChainId,
+        safeBalance,
+        isRelayerLoading,
+        relayTransaction,
+        ownerAddress,
+        gelatoTaskId,
+    } = useAccountAbstraction()
+    debugger
     return (
         <Layout.Header style={headerStyle}>
             <Row style={{ height: '100%' }} justify="space-between" align="middle">
@@ -27,6 +44,11 @@ export const Header = observer(() => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {chainId === '0x13881' && !isAuthenticated ? (
+                        <Button onClick={loginWeb3Auth}>Connect AO</Button>
+                    ) : (
+                        <div>safeSelected {safes}</div>
+                    )}
                     <EvmWallet />
 
                     {gravixStore.isDarkMode ? (

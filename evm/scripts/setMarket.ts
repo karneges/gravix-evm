@@ -23,16 +23,9 @@ async function main() {
   const [deployer, priceNode] = await ethers.getSigners();
   const gravix = await ethers.getContractAt(
     "Gravix",
-    "0x10e5E8f37f77c9E886D388B313787A2DE6246180",
+    "0x9049aF67Bef5C3c2ABD71b47F1E7D56407AF6AD9",
   );
-  const stgUsdtToken = await ethers.getContractAt(
-    "ERC20Tokens",
-    "0x60095a8Bd09b4B960EE17ed1Ad90bE2807da70B7",
-  );
-  const tx = await stgUsdtToken
-    .transferOwnership(gravix)
-    .then((res) => res.wait());
-  console.log(tx!.hash);
+
   // const faucet = await ethers.getContractAt(
   //   "ERC20Faucet",
   //   "0x9049aF67Bef5C3c2ABD71b47F1E7D56407AF6AD9",
@@ -50,7 +43,7 @@ async function main() {
   //   .then((res) => res.wait());
   // console.log(tx!.hash);
 
-  // const tx = await gravix.addMarkets([basic_config]).then((res) => res.wait());
+  const tx = await gravix.addMarkets([basic_config]).then((res) => res.wait());
   // console.log(tx!.hash);
 }
 

@@ -163,6 +163,7 @@ export class DepositStore {
 
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
+            debugger
             gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
             const assetData = await DepositStore.getAssetData(this.market.idx, '59140')
 

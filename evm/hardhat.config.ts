@@ -12,7 +12,15 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY_PRICE_NODE!,
       ],
     },
+    mumbai: {
+      url: "https://rpc-mumbai.maticvigil.com/",
+      accounts: [
+        process.env.PRIVATE_KEY_MUMBAI!,
+        process.env.PRIVATE_KEY_PRICE_NODE!,
+      ],
+    },
   },
+
   etherscan: {
     apiKey: {
       linea: process.env.LINEASCAN_API_KEY!,
