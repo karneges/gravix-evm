@@ -14,9 +14,11 @@ import BigNumber from 'bignumber.js';
 
 const RPC_URL = {
   linea: 'https://rpc.goerli.linea.build',
+  mumbai: 'https://rpc-mumbai.maticvigil.com/',
 };
 const CHAIN_ID_TO_NETWORK: Record<number, Networks> = {
   59140: 'linea',
+  80001: 'mumbai',
 };
 type Networks = keyof typeof RPC_URL;
 type ADDRESSES = Record<Networks, string>;
@@ -35,16 +37,23 @@ export class EvmService {
   ) {
     const privateKey = this.configService.get<string>('PRIVATE_KEY_PRICE_NODE');
     const lineaGravix = this.configService.get<string>('LINEA_GRAVIX');
+    const mumbaiGravix = this.configService.get<string>('MUMBAI_GRAVIX');
 
     this.providers = {
       linea: new ethers.JsonRpcProvider('https://rpc.goerli.linea.build'),
+      mumbai: new ethers.JsonRpcProvider(RPC_URL['mumbai']),
     };
     this.vaultAddresses.linea = lineaGravix;
+    this.vaultAddresses.mumbai = mumbaiGravix;
 
     this.priceNodeWallet = new ethers.Wallet(privateKey);
     this.gravixContracts.linea = Gravix__factory.connect(
       this.vaultAddresses.linea,
       this.providers.linea,
+    );
+    this.gravixContracts.mumbai = Gravix__factory.connect(
+      this.vaultAddresses.mumbai,
+      this.providers.mumbai,
     );
 
     this.updateMarketsCrone();
