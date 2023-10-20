@@ -47,7 +47,6 @@ export class BalanceStore {
 
     async syncUsdtBalance(): Promise<void> {
         let usdtBalance: string
-        debugger
         try {
             if (this.wallet && this.evmWallet.provider && this.gravix.network) {
                 usdtBalance = await getTokenBalance(
@@ -56,10 +55,8 @@ export class BalanceStore {
                     this.evmWallet.provider,
                 )
                 console.log(`address: ${this.wallet}, usdtBalance: ${usdtBalance}`)
-                debugger
             }
         } catch (e) {
-            debugger
             console.error(e)
         }
 

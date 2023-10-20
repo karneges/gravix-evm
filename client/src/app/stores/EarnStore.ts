@@ -174,7 +174,6 @@ export class EarnStore {
 
     async syncPoolBalance(): Promise<void> {
         let poolBalance: string
-        debugger
         try {
             if (this.wallet && this.gravix.network) {
                 poolBalance = await getTokenBalance(
