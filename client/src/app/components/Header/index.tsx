@@ -8,11 +8,8 @@ import { GravixStore } from '../../stores/GravixStore.js'
 import { EvmWallet } from '../EvmWallet/index.js'
 import { routes } from '../../routes/index.js'
 import styles from './index.module.scss'
-import { useAccountAbstraction } from '../../stores/accountAbstractionContext.js'
-import { sliceAddress } from '../../utils/slice-address.js'
 import { SafeWallet } from '../SafeWallet/index.js'
 import { EvmWalletStore } from '../../stores/EvmWalletStore.js'
-import { initialChain } from '../../chains/chains.js'
 
 const headerStyle: React.CSSProperties = {
     width: '100%',

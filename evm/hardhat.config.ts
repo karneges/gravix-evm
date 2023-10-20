@@ -19,6 +19,13 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY_PRICE_NODE!,
       ],
     },
+    scroll: {
+      url: "https://sepolia-rpc.scroll.io",
+      accounts: [
+        process.env.PRIVATE_KEY_MUMBAI!,
+        process.env.PRIVATE_KEY_PRICE_NODE!,
+      ],
+    },
   },
 
   etherscan: {
