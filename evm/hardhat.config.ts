@@ -26,6 +26,13 @@ const config: HardhatUserConfig = {
         process.env.PRIVATE_KEY_PRICE_NODE!,
       ],
     },
+    mantle: {
+      url: "https://rpc.testnet.mantle.xyz/",
+      accounts: [
+        process.env.PRIVATE_KEY_MUMBAI!,
+        process.env.PRIVATE_KEY_PRICE_NODE!,
+      ],
+    },
   },
 
   etherscan: {

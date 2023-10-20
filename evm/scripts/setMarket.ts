@@ -23,7 +23,7 @@ async function main() {
   const [deployer, priceNode] = await ethers.getSigners();
   const gravix = await ethers.getContractAt(
     "Gravix",
-    "0x9049aF67Bef5C3c2ABD71b47F1E7D56407AF6AD9",
+    "0x46f6e0820DD0f132B459Dbea649CA4f5C003b4B9",
   );
 
   // const faucet = await ethers.getContractAt(
@@ -43,7 +43,11 @@ async function main() {
   //   .then((res) => res.wait());
   // console.log(tx!.hash);
 
-  const tx = await gravix.addMarkets([basic_config]).then((res) => res.wait());
+  const tx = await gravix
+    .addMarkets([basic_config], {
+      gasLimit: "0x1000000",
+    })
+    .then((res) => res.wait());
   // console.log(tx!.hash);
 }
 

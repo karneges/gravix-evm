@@ -15,10 +15,14 @@ import BigNumber from 'bignumber.js';
 const RPC_URL = {
   linea: 'https://rpc.goerli.linea.build',
   mumbai: 'https://rpc-mumbai.maticvigil.com/',
+  scroll: 'https://sepolia-rpc.scroll.io',
+  mantle: 'https://rpc.testnet.mantle.xyz/',
 };
 const CHAIN_ID_TO_NETWORK: Record<number, Networks> = {
   59140: 'linea',
   80001: 'mumbai',
+  534351: 'scroll',
+  5001: 'mantle',
 };
 type Networks = keyof typeof RPC_URL;
 type ADDRESSES = Record<Networks, string>;
@@ -38,23 +42,41 @@ export class EvmService {
     const privateKey = this.configService.get<string>('PRIVATE_KEY_PRICE_NODE');
     const lineaGravix = this.configService.get<string>('LINEA_GRAVIX');
     const mumbaiGravix = this.configService.get<string>('MUMBAI_GRAVIX');
+    const scrollGravix = this.configService.get<string>('SCROLL_GRAVIX');
+    const mantleGravix = this.configService.get<string>('MANTLE_GRAVIX');
 
     this.providers = {
-      linea: new ethers.JsonRpcProvider('https://rpc.goerli.linea.build'),
+      linea: new ethers.JsonRpcProvider(RPC_URL['linea']),
       mumbai: new ethers.JsonRpcProvider(RPC_URL['mumbai']),
+      scroll: new ethers.JsonRpcProvider(RPC_URL['scroll']),
+      mantle: new ethers.JsonRpcProvider(RPC_URL['mantle']),
     };
-    this.vaultAddresses.linea = lineaGravix;
-    this.vaultAddresses.mumbai = mumbaiGravix;
+    this.vaultAddresses = {
+      linea: lineaGravix,
+      mumbai: mumbaiGravix,
+      scroll: scrollGravix,
+      mantle: mantleGravix,
+    };
 
     this.priceNodeWallet = new ethers.Wallet(privateKey);
-    this.gravixContracts.linea = Gravix__factory.connect(
-      this.vaultAddresses.linea,
-      this.providers.linea,
-    );
-    this.gravixContracts.mumbai = Gravix__factory.connect(
-      this.vaultAddresses.mumbai,
-      this.providers.mumbai,
-    );
+    this.gravixContracts = {
+      linea: Gravix__factory.connect(
+        this.vaultAddresses.linea,
+        this.providers.linea,
+      ),
+      mumbai: Gravix__factory.connect(
+        this.vaultAddresses.mumbai,
+        this.providers.mumbai,
+      ),
+      scroll: Gravix__factory.connect(
+        this.vaultAddresses.scroll,
+        this.providers.scroll,
+      ),
+      mantle: Gravix__factory.connect(
+        this.vaultAddresses.mantle,
+        this.providers.mantle,
+      ),
+    };
 
     this.updateMarketsCrone();
   }
