@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3ddf1721-b4a7-4697-b9c4-5d44ff747eea" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/app/components/Header/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/components/Header/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/app/stores/BalanceStore.ts" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/BalanceStore.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext-v2.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext-v2.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evm/scripts/depositUsdt.ts" beforeDir="false" afterPath="$PROJECT_DIR$/evm/scripts/depositUsdt.ts" afterDir="false" />
-    </list>
+    <list default="true" id="3ddf1721-b4a7-4697-b9c4-5d44ff747eea" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -74,7 +68,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "Merging master",
     "last_opened_file_path": "O:/projects/broxus/gravix-evm/evm/scripts",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
