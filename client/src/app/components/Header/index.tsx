@@ -9,6 +9,8 @@ import { EvmWallet } from '../EvmWallet/index.js'
 import { routes } from '../../routes/index.js'
 import styles from './index.module.scss'
 import { DepositStore } from '../../stores/DepositStore.js'
+import { EvmWalletStore } from '../../stores/EvmWalletStore.js'
+import { SafeWallet } from '../SafeWallet/index.js'
 
 const headerStyle: React.CSSProperties = {
     width: '100%',
@@ -18,6 +20,7 @@ const headerStyle: React.CSSProperties = {
 export const Header = observer(() => {
     const gravixStore = useStore(GravixStore)
     const depositStore = useStore(DepositStore)
+    const walletStore = useStore(EvmWalletStore)
 
     return (
         <Layout.Header style={headerStyle} className={styles.header}>
@@ -38,6 +41,8 @@ export const Header = observer(() => {
                     >
                         Mint USDT
                     </Button>
+
+                    {(walletStore.chainId || '0') === 80001 && <SafeWallet />}
 
                     <EvmWallet />
 
