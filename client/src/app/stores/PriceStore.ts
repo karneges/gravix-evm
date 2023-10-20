@@ -27,7 +27,7 @@ export class PriceStore {
     }
 
     init() {
-        this.reactions.create(reaction(() => this.market.market, this.resync, { fireImmediately: true }))
+        this.reactions.create(reaction(() => this.market.ticker, this.resync, { fireImmediately: true }))
     }
 
     dispose() {
@@ -45,19 +45,23 @@ export class PriceStore {
     }
 
     async syncPrice(): Promise<void> {
-        try {
-            const fetchBTCFeed = await fetch(
-                `https://api.binance.com/api/v3/avgPrice?symbol=${mapApiSymbol(this.market.idx)}`,
-            )
+        let price: string
 
-            const priceFeed = await fetchBTCFeed.json()
-
-            runInAction(() => {
-                this.state.price = priceFeed?.price
-            })
-        } catch (e) {
-            console.error(e)
+        if (this.market.ticker) {
+            try {
+                const fetchBTCFeed = await fetch(
+                    `https://api.binance.com/api/v3/avgPrice?symbol=${mapApiSymbol(this.market.ticker)}`,
+                )
+                const priceFeed = await fetchBTCFeed.json()
+                price = priceFeed?.price
+            } catch (e) {
+                console.error(e)
+            }
         }
+
+        runInAction(() => {
+            this.state.price = price
+        })
     }
 
     get price(): string | undefined {

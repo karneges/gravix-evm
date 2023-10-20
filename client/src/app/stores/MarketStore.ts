@@ -1,20 +1,28 @@
 import { makeAutoObservable } from 'mobx'
-import { MarketsStore } from './MarketsStore.js'
 import { MarketInfo } from '../../types.js'
-import { decimalPercent } from '../utils/gravix.js'
+import { decimalLeverage, decimalPercent } from '../utils/gravix.js'
+import { GravixStore } from './GravixStore.js'
+import { EvmWalletStore } from './EvmWalletStore.js'
 
 type State = {
-    idx: string
+    idx?: string
 }
 
-const initialState: State = {
-    idx: '0',
+type TAssetData = {
+    price: number
+    timestamp: number
+    signature: string
 }
+
+const initialState: State = {}
 
 export class MarketStore {
     protected state = initialState
 
-    constructor(protected markets: MarketsStore) {
+    constructor(
+        protected gravix: GravixStore,
+        protected wallet: EvmWalletStore,
+    ) {
         makeAutoObservable(
             this,
             {},
@@ -28,12 +36,34 @@ export class MarketStore {
         this.state.idx = val
     }
 
-    get idx(): string {
-        return this.state.idx
+    async loadAssetData(): Promise<TAssetData | undefined> {
+        if (!this.idx) return undefined
+        const assetData = await (
+            await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    marketIdx: this.idx,
+                    chainId: this.wallet.chainId,
+                }),
+            })
+        ).json()
+
+        return assetData
+    }
+
+    get idx(): string | undefined {
+        return this.state.idx ?? this.gravix.markets[0]?.marketIdx.toString()
     }
 
     get market(): MarketInfo | undefined {
-        return this.markets.byIdx[this.idx]
+        return this.idx ? this.gravix.byIdx[this.idx] : undefined
+    }
+
+    get ticker(): string | undefined {
+        return this.market?.ticker
     }
 
     get totalLongs(): string | undefined {
@@ -72,7 +102,11 @@ export class MarketStore {
         return this.market?.market.maxTotalLongsUSD.toString()
     }
 
-    public get maxTotalShortsUSD(): string | undefined {
+    get maxTotalShortsUSD(): string | undefined {
         return this.market?.market.maxTotalShortsUSD.toString()
+    }
+
+    get maxLeverage(): string | undefined {
+        return this.market?.market.maxLeverage ? decimalLeverage(this.market.market.maxLeverage.toString()) : undefined
     }
 }

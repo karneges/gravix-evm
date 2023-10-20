@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx'
 import { MetaMaskInpageProvider } from '@metamask/providers'
 import { Web3 } from 'web3'
+import { networks } from '../../config.js'
 
 type State = {
     chainId?: string
@@ -81,12 +82,59 @@ export class EvmWalletStore {
         })
     }
 
+    async changeNetwork(chainId: number): Promise<void> {
+        try {
+            await this.provider?.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: `0x${chainId.toString(16)}` }],
+            })
+        } catch (e: any) {
+            console.error(e)
+            if (e.code === 4902 || /wallet_addethereumchain/gi.test(e.message?.toLowerCase())) {
+                await this.addNetwork(chainId)
+            }
+        }
+    }
+
+    async addNetwork(chainId: number): Promise<void> {
+        try {
+            const network = networks.find(item => item.chainId === chainId)
+
+            if (!network) {
+                throw new Error('Unknown chain id')
+            }
+
+            await this.provider?.request({
+                method: 'wallet_addEthereumChain',
+                params: [
+                    {
+                        blockExplorerUrls: [network.explorer],
+                        chainId: `0x${chainId.toString(16)}`,
+                        chainName: network.name,
+                        nativeCurrency: {
+                            decimals: 18,
+                            name: network.currency,
+                            symbol: network.currency,
+                        },
+                        rpcUrls: [network.rpc],
+                    },
+                ],
+            })
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     get address(): string | undefined {
         return this.state.address
     }
 
     get balance(): string | undefined {
         return this.state.balance
+    }
+
+    get chainId(): number | undefined {
+        return this.state.chainId ? parseInt(this.state.chainId, 10) : undefined
     }
 
     static getProvider(): MetaMaskInpageProvider {

@@ -1,0 +1,38 @@
+.root {
+    &.muted {
+        &.red {
+            color: rgba(205, 42, 81, 0.72);
+        }
+
+        &.green {
+            color: rgba(13, 182, 121, 0.64);
+        }
+    }
+
+    &.red {
+        color: #CD2A51;
+    }
+
+    &.green {
+        color: #0DB679;
+    }
+
+    &.green,
+    &.red {
+        .decimals {
+            opacity: 1;
+        }
+    }
+
+    &.gray {
+        opacity: 0.48;
+
+        .decimals {
+            opacity: 1;
+        }
+    }
+}
+
+.decimals {
+    opacity: 0.48;
+}

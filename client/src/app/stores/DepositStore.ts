@@ -1,4 +1,4 @@
-import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { makeAutoObservable, runInAction } from 'mobx'
 import { notification } from 'antd'
 import { BigNumber } from 'bignumber.js'
 import { Reactions } from '../utils/reactions.js'
@@ -10,24 +10,18 @@ import { PriceStore } from './PriceStore.js'
 import { GravixStore } from './GravixStore.js'
 import { normalizeAmount } from '../utils/normalize-amount.js'
 import { normalizePercent } from '../utils/mix.js'
-import { GravixVault, UsdtToken } from '../../config.js'
-import { approveTokens, getTokenBalance, mapIdxToTicker, normalizeLeverage } from '../utils/gravix.js'
+import { approveTokens, mapTickerToTicker, normalizeLeverage } from '../utils/gravix.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { MarketStore } from './MarketStore.js'
+import { BalanceStore } from './BalanceStore.js'
+import { MarketStatsStore } from './MarketStatsStore.js'
 
 export enum DepositType {
     Long = '0',
     Short = '1',
 }
 
-type AssetData = {
-    price: number
-    timestamp: number
-    signature: string
-}
-
 type State = {
-    usdtBalance?: string
     loading?: boolean
     depositType: DepositType
     leverage: string
@@ -52,6 +46,8 @@ export class DepositStore {
         protected price: PriceStore,
         protected gravix: GravixStore,
         protected market: MarketStore,
+        protected marketStats: MarketStatsStore,
+        protected balance: BalanceStore,
     ) {
         makeAutoObservable(
             this,
@@ -60,8 +56,6 @@ export class DepositStore {
                 autoBind: true,
             },
         )
-
-        this.reactions.create(reaction(() => this.wallet.address, this.syncUsdtBalance, { fireImmediately: true }))
     }
 
     setType(val: DepositType): void {
@@ -108,22 +102,6 @@ export class DepositStore {
                 : undefined
     }
 
-    async syncUsdtBalance(): Promise<void> {
-        let usdtBalance: string
-
-        try {
-            if (this.wallet.provider && this.wallet.address) {
-                usdtBalance = await getTokenBalance(UsdtToken, this.wallet.address, this.wallet.provider)
-            }
-        } catch (e) {
-            console.error(e)
-        }
-
-        runInAction(() => {
-            this.state.usdtBalance = usdtBalance
-        })
-    }
-
     async submit(): Promise<void> {
         let success = false,
             gravix: Gravix | undefined
@@ -161,16 +139,35 @@ export class DepositStore {
                 throw new Error('slippageNormalized must be defined')
             }
 
+            if (!this.market.idx) {
+                throw new Error('market.idx must be defined')
+            }
+
+            if (!this.market.ticker) {
+                throw new Error('market.ticker must be defined')
+            }
+
+            if (!this.gravix.network) {
+                throw new Error('gravix.network must be defined')
+            }
+
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
-            debugger
-            gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
-            const assetData = await DepositStore.getAssetData(this.market.idx, '59140')
+            gravix = new ethers.Contract(
+                this.gravix.network.GravixVault,
+                GravixAbi.abi,
+                signer,
+            ) as ethers.BaseContract as Gravix
+            const assetData = await this.market.loadAssetData()
+
+            if (!assetData) {
+                throw new Error('assetData empty')
+            }
 
             await approveTokens(
-                UsdtToken,
+                this.gravix.network.UsdtToken,
                 this.wallet.address,
-                GravixVault,
+                this.gravix.network.GravixVault,
                 this.collateralNormalized,
                 this.wallet.provider,
             )
@@ -180,10 +177,10 @@ export class DepositStore {
                     .addListener('MarketOrderExecution', (address, data) => {
                         if (address === this.wallet.address) {
                             const price = decimalAmount(data.openPrice, 8)
-                            const type = data.positionType === '0' ? 'Long' : 'Short'
+                            const type = data.positionType.toString() === '0' ? 'Long' : 'Short'
                             notification.success({
                                 message: 'Market order executed',
-                                description: `${mapIdxToTicker(data.marketIdx.toString())} ${type} open at $${price}`,
+                                description: `${mapTickerToTicker(this.market.ticker!)} ${type} open at $${price}`,
                                 placement: 'bottomRight',
                             })
                             resolve(true)
@@ -214,7 +211,7 @@ export class DepositStore {
         }
 
         gravix?.removeAllListeners().catch(console.error)
-        await this.syncUsdtBalance()
+        await this.balance.syncUsdtBalance()
 
         runInAction(() => {
             this.state.collateral = success ? '' : this.collateral
@@ -228,10 +225,6 @@ export class DepositStore {
         return !!this.state.loading
     }
 
-    get usdtBalance(): string | undefined {
-        return this.state.usdtBalance
-    }
-
     get collateral(): string | undefined {
         return this.state.collateral
     }
@@ -241,8 +234,8 @@ export class DepositStore {
     }
 
     get amountIsValid(): boolean {
-        if (this.state.usdtBalance && this.collateralNormalized) {
-            return new BigNumber(this.state.usdtBalance).gte(this.collateralNormalized)
+        if (this.balance.usdtBalance && this.collateralNormalized) {
+            return new BigNumber(this.balance.usdtBalance).gte(this.collateralNormalized)
         }
 
         return false
@@ -274,7 +267,7 @@ export class DepositStore {
             : undefined
     }
 
-    public get liquidationPrice(): string | undefined {
+    get liquidationPrice(): string | undefined {
         if (
             this.collateral &&
             this.openFee &&
@@ -316,8 +309,6 @@ export class DepositStore {
 
     get dynamicSpread(): string | undefined {
         const isLong = this.depositType === DepositType.Long
-
-        console.log(this.price.priceNormalized)
 
         return this.market.totalLongs &&
             this.positionNormalized &&
@@ -362,7 +353,7 @@ export class DepositStore {
             : undefined
     }
 
-    public get openPriceNormalized(): string | undefined {
+    get openPriceNormalized(): string | undefined {
         return this.openPrice ? normalizeAmount(this.openPrice, 8) : undefined
     }
 
@@ -370,18 +361,24 @@ export class DepositStore {
         return this.state.slippage ? normalizePercent(this.state.slippage) : undefined
     }
 
-    static async getAssetData(marketIdx: string, chainId: string): Promise<AssetData> {
-        const data = await fetch('https://api-cc35d.ondigitalocean.app/signature', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                marketIdx,
-                chainId,
-            }),
-        }).then(resp => resp.json())
+    get isValid(): boolean | undefined {
+        if (this.collateral) {
+            return this.gravix.minPositionCollateral && this.collateralNormalized
+                ? new BigNumber(this.collateralNormalized).gte(this.gravix.minPositionCollateral)
+                : undefined
+        }
+        return undefined
+    }
 
-        return data
+    get isSpreadValid(): boolean | undefined {
+        return this.price.price && this.liquidationPrice
+            ? this.depositType === DepositType.Long
+                ? new BigNumber(this.price.price).gt(this.liquidationPrice)
+                : new BigNumber(this.price.price).lt(this.liquidationPrice)
+            : undefined
+    }
+
+    get isEnabled(): boolean | undefined {
+        return this.isValid && this.amountIsValid && this.isSpreadValid === true
     }
 }

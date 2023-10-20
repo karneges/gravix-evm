@@ -1,3 +1,11 @@
+import { IGravix } from './assets/misc/Gravix.js'
+
+export type WithoutArr<T> = {
+    [Key in {
+        [key in keyof T]: key extends keyof Array<any> ? never : key extends `${number}` ? never : key
+    }[keyof T]]: T[Key]
+}
+
 export type Fees = {
     openFeeRate: bigint
     closeFeeRate: bigint
@@ -32,3 +40,15 @@ export type MarketInfo = {
     ticker: string
     market: Market
 }
+
+export type FullPositionData = {
+    '1': WithoutArr<IGravix.PositionStructOutput>
+    '0': string
+}
+
+export type PositionViewData = {
+    '1': WithoutArr<IGravix.PositionViewStructOutput>
+    '0': string
+}
+
+export type TGravixPosition = WithoutArr<IGravix.PositionStructOutput> & { index: string }

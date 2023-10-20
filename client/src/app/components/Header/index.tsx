@@ -35,7 +35,7 @@ export const Header = observer(() => {
     } = useAccountAbstraction()
     debugger
     return (
-        <Layout.Header style={headerStyle}>
+        <Layout.Header style={headerStyle} className={styles.header}>
             <Row style={{ height: '100%' }} justify="space-between" align="middle">
                 <div className={styles.menu}>
                     <Typography.Text>Gravix</Typography.Text>
@@ -51,33 +51,18 @@ export const Header = observer(() => {
                     )}
                     <EvmWallet />
 
-                    {gravixStore.isDarkMode ? (
-                        <Button
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginLeft: '20px',
-                            }}
-                            onClick={() => gravixStore.toggleTheme()}
-                            type="primary"
-                            shape="circle"
-                            icon={<IoMoonOutline />}
-                        />
-                    ) : (
-                        <Button
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginLeft: '20px',
-                            }}
-                            onClick={() => gravixStore.toggleTheme()}
-                            type="primary"
-                            shape="circle"
-                            icon={<IoSunny />}
-                        />
-                    )}
+                    <Button
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginLeft: '20px',
+                        }}
+                        onClick={() => gravixStore.toggleTheme()}
+                        type="primary"
+                        shape="circle"
+                        icon={gravixStore.isDarkMode ? <IoMoonOutline /> : <IoSunny />}
+                    />
                 </div>
             </Row>
         </Layout.Header>

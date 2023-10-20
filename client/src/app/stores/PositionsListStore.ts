@@ -1,7 +1,7 @@
 import { ethers, Contract, BaseContract } from 'ethers'
-import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { notification } from 'antd'
+import { comparer, makeAutoObservable, reaction, runInAction } from 'mobx'
 import { EvmWalletStore } from './EvmWalletStore.js'
-import { GravixVault } from '../../config.js'
 import GravixAbi from '../../assets/abi/Gravix.json'
 import { Gravix } from '../../assets/misc/index.js'
 import { Reactions } from '../utils/reactions.js'
@@ -9,27 +9,33 @@ import { IGravix } from '../../assets/misc/Gravix.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
 import { GravixStore } from './GravixStore.js'
 import { BigNumber } from 'bignumber.js'
-
-export type WithoutArr<T> = {
-    [Key in {
-        [key in keyof T]: key extends keyof Array<any> ? never : key extends `${number}` ? never : key
-    }[keyof T]]: T[Key]
-}
-
-export type TGravixPosition = WithoutArr<IGravix.PositionStructOutput> & { index: string }
+import { FullPositionData, PositionViewData, TGravixPosition, WithoutArr } from '../../types.js'
+import { lastOfCalls } from '../utils/last-of-calls.js'
+import { mapTickerToTicker } from '../utils/gravix.js'
+import { BalanceStore } from './BalanceStore.js'
+import { MarketStore } from './MarketStore.js'
 
 type State = {
     marketOrders?: WithoutArr<TGravixPosition>[]
-    marketOrdersPosView?: WithoutArr<IGravix.PositionViewStructOutput>[]
+    marketOrdersFull?: FullPositionData[]
+    marketOrdersPosView?: PositionViewData[]
+    closeLoading: { [k: string]: boolean | undefined }
+}
+
+const initialState: State = {
+    closeLoading: {},
 }
 
 export class PositionsListStore {
     protected reactions = new Reactions()
-    protected state: State = {}
+    protected state = initialState
+    protected provider?: ethers.BrowserProvider
 
     constructor(
         protected evmWallet: EvmWalletStore,
         protected gravix: GravixStore,
+        protected balance: BalanceStore,
+        protected market: MarketStore,
     ) {
         makeAutoObservable(
             this,
@@ -38,32 +44,64 @@ export class PositionsListStore {
                 autoBind: true,
             },
         )
+    }
 
-        this.reactions.create(reaction(() => [this.evmWallet.address], this.initApp, { fireImmediately: true }))
+    init() {
+        this.reactions.create(
+            reaction(() => [this.evmWallet.address, this.market.idx, this.gravix.network], this.reload, {
+                fireImmediately: true,
+                equals: comparer.structural,
+            }),
+        )
+    }
+
+    reload() {
+        this.state = initialState
+        this.initApp().catch(console.error)
+    }
+
+    dispose() {
+        this.reactions.destroy()
+        this.provider?.removeAllListeners().catch(console.error)
+        this.state = initialState
+    }
+
+    protected onContract = lastOfCalls(() => {
+        this.initApp().catch(console.error)
+    }, 500)
+
+    async initListener(): Promise<void> {
+        try {
+            await this.provider?.removeAllListeners()
+            if (this.gravix.network) {
+                await this.provider?.on(
+                    {
+                        address: this.gravix.network.GravixVault,
+                    },
+                    this.onContract,
+                )
+            }
+        } catch (e) {
+            console.error(e)
+        }
     }
 
     async initApp() {
-        if (!this.evmWallet.provider || !this.evmWallet.address) return
-        const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
-        const signer = await browserProvider.getSigner()
-        const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+        const assetData = await this.market.loadAssetData()
+
+        if (!this.evmWallet.provider || !this.evmWallet.address || !assetData || !this.gravix.network) return
+        this.provider = new ethers.BrowserProvider(this.evmWallet.provider)
+
+        const signer = await this.provider.getSigner()
+        const gravixContract = new Contract(
+            this.gravix.network.GravixVault,
+            GravixAbi.abi,
+            signer,
+        ) as BaseContract as Gravix
 
         const position = await gravixContract.getUserPositions(this.evmWallet.address)
 
         const filteredPositions = position.filter(_ => (_[1].createdAt.toString() !== '0' ? true : false))
-        console.log(position, 'initApp')
-        const assetData = await (
-            await fetch('https://api-cc35d.ondigitalocean.app/api/signature', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    marketIdx: 0,
-                    chainId: 59140,
-                }),
-            })
-        ).json()
         const address = this.evmWallet.address
 
         const positionsView = await Promise.all(
@@ -77,82 +115,135 @@ export class PositionsListStore {
                         accShortUSDFundingPerShare: 0,
                     },
                 })
-                console.log(position, 'positionsView')
 
                 return position
             }),
         )
 
+        await this.initListener()
+
         runInAction(() => {
             this.state.marketOrders = filteredPositions.map(_ => mapPosition(_, _[0].toString()))
-            // positionKey: BigNumberish;
-            // user: AddressLike;
-            // assetPrice: BigNumberish;
-            // funding: IGravix.FundingStruct;
-            this.state.marketOrdersPosView = positionsView.map(mapPositionView)
+            this.state.marketOrdersFull = filteredPositions.map(_ => mapFullPosition(_))
+            this.state.marketOrdersPosView = positionsView.map((_, i) =>
+                mapPositionView(_, filteredPositions[i][0].toString()),
+            )
         })
     }
 
     async closePos(key: string) {
-        if (!this.evmWallet.provider || !this.evmWallet.address) return
-        console.log('333')
+        if (!this.evmWallet.provider || !this.evmWallet.address || !this.gravix.network) return
+
+        runInAction(() => {
+            this.state.closeLoading[key] = true
+        })
 
         try {
             const browserProvider = new ethers.BrowserProvider(this.evmWallet.provider)
             const signer = await browserProvider.getSigner()
-            const gravixContract = new Contract(GravixVault, GravixAbi.abi, signer) as BaseContract as Gravix
+            const gravixContract = new Contract(
+                this.gravix.network.GravixVault,
+                GravixAbi.abi,
+                signer,
+            ) as BaseContract as Gravix
+            const assetData = await this.market.loadAssetData()
 
-            const assetData = await (
-                await fetch('https://api-cc35d.ondigitalocean.app/signature', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        marketIdx: 0,
-                        chainId: 59140,
-                    }),
-                })
-            ).json()
+            if (!assetData) {
+                throw new Error('no asset data')
+            }
+
+            const successListener = new Promise<boolean>((resolve, reject) => {
+                gravixContract!
+                    .addListener('ClosePosition', (address, _, data) => {
+                        if (address === this.evmWallet.address) {
+                            const price = decimalAmount(data.closePrice.toString(), 8)
+                            const type = data.position.positionType.toString() === '0' ? 'Long' : 'Short'
+                            const ticker = mapTickerToTicker(this.market.ticker!)
+                            notification.success({
+                                message: 'Position closed',
+                                description: `${ticker} ${type} closed at $${price}`,
+                                placement: 'bottomRight',
+                            })
+                            this.balance.syncUsdtBalance().catch(console.error)
+                            resolve(true)
+                        }
+                    })
+                    .catch(reject)
+            })
 
             await gravixContract.closeMarketPosition(0, key, assetData.price, assetData.timestamp, assetData.signature)
 
-            console.log('closePos')
+            await successListener
         } catch (e) {
-            console.log(e)
+            console.error(e)
+            runInAction(() => {
+                this.state.closeLoading[key] = false
+            })
         }
     }
 
     countSize(collateral: string, leverage: string) {
         const normLeverage = decimalAmount(leverage, this.gravix.baseNumber)
-        console.log(normLeverage, 'normLeverage')
         return new BigNumber(collateral)
             .times(normLeverage)
             .div(10 ** 6)
             .toFixed(2)
     }
 
-    public get allUserViewPositions(): WithoutArr<IGravix.PositionViewStructOutput>[] {
-        return this.state.marketOrdersPosView ?? []
-    }
-
     public get allUserPositions(): WithoutArr<TGravixPosition>[] {
         return this.state.marketOrders ?? []
     }
+
+    public get positionsViewById(): { [k: string]: WithoutArr<IGravix.PositionViewStructOutput> | undefined } {
+        return this.state.marketOrdersPosView ? Object.fromEntries(this.state.marketOrdersPosView as any) : {}
+    }
+
+    public get positionsById(): { [k: string]: WithoutArr<TGravixPosition> | undefined } {
+        return this.state.marketOrdersFull ? Object.fromEntries(this.state.marketOrdersFull as any) : {}
+    }
+
+    public get closeLoading(): State['closeLoading'] {
+        return this.state.closeLoading
+    }
 }
 
-const mapPositionView = (item: IGravix.PositionViewStructOutput): WithoutArr<IGravix.PositionViewStructOutput> => ({
-    position: item.position,
-    positionSizeUSD: item.positionSizeUSD,
-    closePrice: item.closePrice,
-    borrowFee: item.borrowFee,
-    fundingFee: item.fundingFee,
-    closeFee: item.closeFee,
-    liquidationPrice: item.liquidationPrice,
-    pnl: item.pnl,
-    liquidate: item.liquidate,
-    viewTime: item.viewTime,
-})
+const mapPositionView = (item: IGravix.PositionViewStructOutput, positionKey: string): PositionViewData => {
+    return {
+        '1': {
+            position: item.position,
+            positionSizeUSD: item.positionSizeUSD,
+            closePrice: item.closePrice,
+            borrowFee: item.borrowFee,
+            fundingFee: item.fundingFee,
+            closeFee: item.closeFee,
+            liquidationPrice: item.liquidationPrice,
+            pnl: item.pnl,
+            liquidate: item.liquidate,
+            viewTime: item.viewTime,
+        },
+        '0': positionKey,
+    }
+}
+const mapFullPosition = (item: IGravix.UserPositionInfoStructOutput): FullPositionData => {
+    return {
+        '1': {
+            accUSDFundingPerShare: item[1].accUSDFundingPerShare,
+            baseSpreadRate: item[1].baseSpreadRate,
+            borrowBaseRatePerHour: item[1].borrowBaseRatePerHour,
+            closeFeeRate: item[1].closeFeeRate,
+            createdAt: item[1].createdAt,
+            initialCollateral: item[1].initialCollateral,
+            leverage: item[1].leverage,
+            liquidationThresholdRate: item[1].liquidationThresholdRate,
+            marketIdx: item[1].marketIdx,
+            markPrice: item[1].markPrice,
+            openFee: item[1].openFee,
+            openPrice: item[1].openPrice,
+            positionType: item[1].positionType,
+        },
+        '0': item[0].toString(),
+    }
+}
 
 const mapPosition = (item: IGravix.UserPositionInfoStructOutput, index: string): TGravixPosition => {
     return {

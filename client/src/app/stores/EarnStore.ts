@@ -1,7 +1,6 @@
-import { makeAutoObservable, reaction, runInAction } from 'mobx'
+import { comparer, makeAutoObservable, reaction, runInAction } from 'mobx'
 import { notification } from 'antd'
 import { EvmWalletStore } from './EvmWalletStore.js'
-import { GravixVault, StgUsdtToken, UsdtToken } from '../../config.js'
 import { Reactions } from '../utils/reactions.js'
 import { approveTokens, getTokenBalance } from '../utils/gravix.js'
 import { ethers } from 'ethers'
@@ -10,6 +9,7 @@ import { normalizeAmount } from '../utils/normalize-amount.js'
 import { Gravix } from '../../assets/misc/Gravix.js'
 import { BigNumber } from 'bignumber.js'
 import { decimalAmount } from '../utils/decimal-amount.js'
+import { GravixStore } from './GravixStore.js'
 
 export enum EarnAction {
     Deposit = 'deposit',
@@ -34,7 +34,10 @@ export class EarnStore {
 
     protected reactions = new Reactions()
 
-    constructor(protected wallet: EvmWalletStore) {
+    constructor(
+        protected wallet: EvmWalletStore,
+        protected gravix: GravixStore,
+    ) {
         makeAutoObservable(
             this,
             {},
@@ -46,8 +49,9 @@ export class EarnStore {
 
     init() {
         this.reactions.create(
-            reaction(() => [this.wallet.address, !!this.wallet.provider], this.syncBalance, {
+            reaction(() => [this.wallet.address, this.gravix.network], this.syncBalance, {
                 fireImmediately: true,
+                equals: comparer.structural,
             }),
         )
     }
@@ -128,8 +132,12 @@ export class EarnStore {
         let usdtBalance: string
 
         try {
-            if (this.wallet.provider && this.wallet.address) {
-                usdtBalance = await getTokenBalance(UsdtToken, this.wallet.address, this.wallet.provider)
+            if (this.wallet.provider && this.wallet.address && this.gravix.network) {
+                usdtBalance = await getTokenBalance(
+                    this.gravix.network.UsdtToken,
+                    this.wallet.address,
+                    this.wallet.provider,
+                )
             }
         } catch (e) {
             console.error(e)
@@ -144,8 +152,12 @@ export class EarnStore {
         let stgUsdtBalance: string
 
         try {
-            if (this.wallet.provider && this.wallet.address) {
-                stgUsdtBalance = await getTokenBalance(StgUsdtToken, this.wallet.address, this.wallet.provider)
+            if (this.wallet.provider && this.wallet.address && this.gravix.network) {
+                stgUsdtBalance = await getTokenBalance(
+                    this.gravix.network.StgUsdtToken,
+                    this.wallet.address,
+                    this.wallet.provider,
+                )
             }
         } catch (e) {
             console.error(e)
@@ -160,8 +172,12 @@ export class EarnStore {
         let poolBalance: string
 
         try {
-            if (this.wallet.provider) {
-                poolBalance = await getTokenBalance(UsdtToken, GravixVault, this.wallet.provider)
+            if (this.wallet.provider && this.gravix.network) {
+                poolBalance = await getTokenBalance(
+                    this.gravix.network.UsdtToken,
+                    this.gravix.network.GravixVault,
+                    this.wallet.provider,
+                )
             }
         } catch (e) {
             console.error(e)
@@ -201,11 +217,25 @@ export class EarnStore {
                 throw new Error('wallet.address must be defined')
             }
 
+            if (!this.gravix.network) {
+                throw new Error('gravix.network must be defined')
+            }
+
             const provider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await provider.getSigner()
-            gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+            gravix = new ethers.Contract(
+                this.gravix.network.GravixVault,
+                GravixAbi.abi,
+                signer,
+            ) as ethers.BaseContract as Gravix
             const amount = normalizeAmount(this.amount, 6)
-            await approveTokens(UsdtToken, this.wallet.address, GravixVault, amount, this.wallet.provider)
+            await approveTokens(
+                this.gravix.network.UsdtToken,
+                this.wallet.address,
+                this.gravix.network.GravixVault,
+                amount,
+                this.wallet.provider,
+            )
 
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravix!
@@ -264,11 +294,25 @@ export class EarnStore {
                 throw new Error('wallet.address must be defined')
             }
 
+            if (!this.gravix.network) {
+                throw new Error('gravix.network must be defined')
+            }
+
             const amount = normalizeAmount(this.amount, 6)
-            await approveTokens(StgUsdtToken, this.wallet.address, GravixVault, amount, this.wallet.provider)
+            await approveTokens(
+                this.gravix.network.StgUsdtToken,
+                this.wallet.address,
+                this.gravix.network.GravixVault,
+                amount,
+                this.wallet.provider,
+            )
             const browserProvider = new ethers.BrowserProvider(this.wallet.provider)
             const signer = await browserProvider.getSigner()
-            gravix = new ethers.Contract(GravixVault, GravixAbi.abi, signer) as ethers.BaseContract as Gravix
+            gravix = new ethers.Contract(
+                this.gravix.network.GravixVault,
+                GravixAbi.abi,
+                signer,
+            ) as ethers.BaseContract as Gravix
 
             const successListener = new Promise<boolean>((resolve, reject) => {
                 gravix!

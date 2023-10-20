@@ -16,6 +16,7 @@ export const TradingView: React.FC = observer(() => {
 
     useEffect(() => {
         let widget: any
+        const ticker = market.ticker
 
         if (!tvScriptLoadingPromise) {
             tvScriptLoadingPromise = new Promise(resolve => {
@@ -31,22 +32,26 @@ export const TradingView: React.FC = observer(() => {
             })
         }
 
-        tvScriptLoadingPromise
-            .then(() => {
-                widget = new (window as any).TradingView.widget({
-                    autosize: true,
-                    symbol: mapChartSymbol(market.idx),
-                    interval: 'D',
-                    timezone: 'Etc/UTC',
-                    theme: gravix.isDarkMode ? 'dark' : 'light',
-                    style: '1',
-                    locale: 'en',
-                    enable_publishing: false,
-                    allow_symbol_change: true,
-                    container_id: 'tradingview_06042',
+        if (ticker) {
+            tvScriptLoadingPromise
+                .then(() => {
+                    widget = new (window as any).TradingView.widget({
+                        autosize: true,
+                        symbol: mapChartSymbol(ticker),
+                        interval: 'D',
+                        timezone: 'Etc/UTC',
+                        theme: gravix.isDarkMode ? 'dark' : 'light',
+                        style: '1',
+                        locale: 'en',
+                        enable_publishing: false,
+                        allow_symbol_change: true,
+                        container_id: 'tradingview_06042',
+                    })
                 })
-            })
-            .catch(console.error)
+                .catch(console.error)
+        } else {
+            widget?.remove()
+        }
 
         return () => {
             if (widget) {
@@ -57,7 +62,7 @@ export const TradingView: React.FC = observer(() => {
                 }
             }
         }
-    }, [market.idx, gravix.isDarkMode])
+    }, [market.ticker, gravix.isDarkMode])
 
     return (
         <div

@@ -1,6 +1,9 @@
 .header {
-    grid-column-start: 1;
-    grid-column-end: 3;
+    :global {
+        .ant-typography {
+            color: #fff;
+        }
+    }
 }
 .img {
     display: block;
