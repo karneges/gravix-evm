@@ -15,7 +15,7 @@ export const mapTickerToTicker = (ticker: string) => {
         case 'BTCUSDT':
             return 'BTC/USD'
         case 'ETHUSDT':
-            return 'BTC/USD'
+            return 'ETH/USD'
         case 'BNBUSDT':
             return 'BNB/USD'
         default:
