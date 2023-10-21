@@ -91,7 +91,7 @@ export class AccountAbstractionStore {
         const options: Web3AuthOptions = {
             clientId:
                 process.env.REACT_APP_WEB3AUTH_CLIENT_ID ||
-                'BEyQBpAwXY9Ag0AC304Absb7Wmklj3qG8GbD6hIG1n32k9NEbDZjJuZq-_sv5jmLbT3Lr5rFkAPWHSxeXIdc_vQ',
+                'BJViPsH8rX2x6JKTdrX-1W8DIUbOEPg3R_Wcx9ESz0nR6IP01RC9vXdlZ0LQddtTKT_F1gnsLaZ83j9mesnTP1s',
             web3AuthNetwork: 'testnet',
             chainConfig: {
                 chainNamespace: CHAIN_NAMESPACES.EIP155,

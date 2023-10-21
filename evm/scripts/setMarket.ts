@@ -17,13 +17,13 @@ const basic_config: MarketConfig = {
     borrowBaseRatePerHour: 0, // disable by default
     fundingBaseRatePerHour: 0, // disable by default
   },
-  ticker: "BTCUSDT",
+  ticker: "ETHUSDT",
 };
 async function main() {
   const [deployer, priceNode] = await ethers.getSigners();
   const gravix = await ethers.getContractAt(
     "Gravix",
-    "0x46f6e0820DD0f132B459Dbea649CA4f5C003b4B9",
+    "0x10e5E8f37f77c9E886D388B313787A2DE6246180",
   );
 
   // const faucet = await ethers.getContractAt(
