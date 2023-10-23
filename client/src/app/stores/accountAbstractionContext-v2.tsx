@@ -119,8 +119,10 @@ export class AccountAbstractionStore {
         const openloginAdapter = new OpenloginAdapter({
             loginSettings: {
                 mfaLevel: 'mandatory',
+                redirectUrl: window.location.origin,
             },
             adapterSettings: {
+                redirectUrl: window.location.origin,
                 uxMode: 'popup',
                 whiteLabel: {
                     name: 'Safe',

@@ -7,7 +7,6 @@
     <list default="true" id="3ddf1721-b4a7-4697-b9c4-5d44ff747eea" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext-v2.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/client/src/app/stores/accountAbstractionContext-v2.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evm/scripts/setMarket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/evm/scripts/setMarket.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -179,7 +178,9 @@
       <workItem from="1697661798096" duration="943000" />
       <workItem from="1697744142298" duration="8393000" />
       <workItem from="1697795300460" duration="1861000" />
-      <workItem from="1697890733066" duration="2472000" />
+      <workItem from="1697890733066" duration="4663000" />
+      <workItem from="1697969853727" duration="446000" />
+      <workItem from="1698096856007" duration="436000" />
     </task>
     <servers />
   </component>
